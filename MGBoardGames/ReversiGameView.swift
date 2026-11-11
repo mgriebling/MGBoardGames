@@ -19,6 +19,7 @@ struct ReversiGameView: View {
 	@AppStorage(.settings) private var settings
 	
 	var body: some View {
+		var scale: CGFloat = isLandscape ? 4 : 15
 		GeometryReader { geometry in
 			let newGame = Button("New Game") {
 				withAnimation { game.newGame() }
@@ -29,13 +30,27 @@ struct ReversiGameView: View {
 			VStack {
 				ZStack {
 					board(size: CGSize(width: boardWidth, height: boardWidth))
-					VStack{
+						.id(boardWidth)
+					VStack {
 						HStack(alignment: .firstTextBaseline) {
-							newGame.padding()
+							newGame.buttonStyle(.borderedProminent)
 							Spacer()
-							show.padding()
+							show.buttonStyle(.borderedProminent)
 						}
 						.font(.callout.bold())
+						HStack {
+							if isLandscape && game.activeColor == .whitePiece {
+								Spacer()
+							}
+							Text("\(game.activePlayer.name)'s Move")
+								.font(.title2).bold()
+								.padding(.top, geometry.size.height/scale)
+								.padding(.trailing, -15)
+								.padding(.leading, -10)
+							if isLandscape && game.activeColor == .blackPiece {
+								Spacer()
+							}
+						}
 						Spacer()
 						HStack {
 							scorePiece(player: settings.player1, fontSize: fontSize)
@@ -61,14 +76,14 @@ struct ReversiGameView: View {
 		}
 		.gesture(swipeGesture())
 		.onDisappear {
-			print("Saving board...")
 			game.saveGame()
 		}
 	}
 	
 	func determineWidth(size: CGSize) {
 		boardWidth = min(size.width, size.height)
-		print("Width = \(boardWidth)")
+		isLandscape = size.width > size.height
+		print("Board changed to: \(boardWidth), size = \(size)")
 		if UIDevice.current.model.hasPrefix("iPad Pro") {
 			fontSize =  boardWidth / 20
 		} else if UIDevice.current.model.hasPrefix("iPad") {
@@ -117,7 +132,7 @@ struct ReversiGameView: View {
 	}
 	
 	@ViewBuilder
-	func pieceView(piece: ReversiPieces, position: BoardCoordinate) -> some View {
+	func pieceView(piece: ReversiPieces, position: Position) -> some View {
 		ZStack {
 			Rectangle().stroke(Color(.systemGray3))
 			Group {

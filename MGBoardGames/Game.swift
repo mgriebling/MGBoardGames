@@ -21,12 +21,10 @@ protocol Game {
 	init(rows: Int, columns: Int, player1: Player, player2: Player)
 	func canPlayerMakeMove(_ player: Player) -> Bool
 	func setupInitialPieces()
-	func gameStateChanged()
-	func validMoves(for player: Player) -> [BoardCoordinate]
+	func validMoves(for player: Player) -> [Position]
 	func makeNextMove()
-	func isValidMove(to position: BoardCoordinate, for player: Player) -> Bool
+	func isValidMove(to position: Position, for player: Player) -> Bool
 	
 	subscript(row: Int, column: Int) -> E.Enum { get set }
-	subscript(position: BoardCoordinate) -> E.Enum { get set }
-
+	subscript(position: Position) -> E.Enum { get set }
 }

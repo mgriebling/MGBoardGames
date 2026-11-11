@@ -9,11 +9,6 @@ import SwiftUI
 
 struct PreferencesView: View {
     
-    @State private var showComputer1 = true
-    @State private var showComputer2 = false
-    @State private var extensionsEnabled = false
-    @State private var showExtensionHelp = false
-    
 	@AppStorage(.settings) private var settings
 	
     @Environment(\.presentationMode) var presentationMode
@@ -22,39 +17,41 @@ struct PreferencesView: View {
         NavigationView {
             VStack {
                 Form {
-                    // addExtensions
 					addModePicker
-                    if !showComputer2 {
-                        Section("Your Game Name") {
-                            TextField("First Name", text: $settings.player1.name)
-							SelectColor(player: $settings.player1, player2: $settings.player2)
-                        }
-                    }
-                    if !showComputer1 && !showComputer2 {
-                        Section("Opponent's Name") {
-                            TextField("Opponent's First Name", text: $settings.player2.name)
-							SelectColor(player: $settings.player2, player2: $settings.player1)
-                        }
-                    }
-                    if showComputer1 {
-                        Section("Computer Name") {
-                            TextField("Computer Name", text: $settings.player2.name)
-							SelectColor(player: $settings.player2, player2: $settings.player1)
-                        }
-                    }
-                    if showComputer1 && showComputer2 {
-                        Section("2nd Computer Name") {
-                            TextField("Computer 2 Name", text: $settings.player2.name)
-							SelectColor(player: $settings.player2, player2: $settings.player1)
-                        }
-                    }
-            
-                    if showComputer1 {
-                        addSkillLevel(name: "Computer Skill Level", level: $settings.player1.skill)
-                    }
-                    if showComputer2 {
-                        addSkillLevel(name: "Computer 2 Skill Level", level: $settings.player2.skill)
-                    }
+					switch settings.gameMode {
+						case .personVsPerson:
+							Section("Your Game Name") {
+								TextField("First Name", text: $settings.player1.name)
+								SelectColor(player: $settings.player1, player2: $settings.player2)
+							}
+							Section("Opponent's Name") {
+								TextField("Opponent's First Name", text: $settings.player2.name)
+								SelectColor(player: $settings.player2, player2: $settings.player1)
+							}
+						case .personVsComputer:
+							Section("Your Game Name") {
+								TextField("First Name", text: $settings.player1.name)
+								SelectColor(player: $settings.player1, player2: $settings.player2)
+							}
+							Section("Computer Name") {
+								TextField("Computer Name", text: $settings.player2.name)
+								SelectColor(player: $settings.player2, player2: $settings.player1)
+								addSkillLevel(name: "Computer Skill Level", level: $settings.player1.skill)
+							}
+						case .computerVsComputer:
+							Section("Computer Name") {
+								TextField("Computer Name", text: $settings.player1.name)
+								SelectColor(player: $settings.player1, player2: $settings.player2)
+								addSkillLevel(name: "Computer Skill Level", level: $settings.player1.skill)
+							}
+							Section("2nd Computer Name") {
+								TextField("Computer 2 Name", text: $settings.player2.name)
+								SelectColor(player: $settings.player2, player2: $settings.player1)
+								addSkillLevel(name: "Computer 2 Skill Level", level: $settings.player2.skill)
+							}
+						default:
+							Text("?")
+					}
 
                     addBackdrop
                 }
@@ -139,10 +136,9 @@ struct PreferencesView: View {
     
     var addModePicker: some View {
         Section(header: Text("Game Play Style")) {
-            Picker("Game Setting", selection: $settings.gameMode) {
-				ForEach(GameModes.allCases) { mode in
-					let name = mode.rawValue.replacingOccurrences(of: "Vs", with: " vs ").replacingOccurrences(of: "Remote", with: "Remote ")
-					Text("\(name.capitalized.replacingOccurrences(of: " Vs ", with: " vs "))").tag(mode)
+			Picker("Game Setting", selection: $settings.gameMode.animation()) {
+				ForEach(GameModes.allCases.dropLast()) { mode in
+					Text("\(mode.rawValue)").tag(mode)
 				}
             }
 			.pickerStyle(.wheel)
@@ -151,11 +147,14 @@ struct PreferencesView: View {
                 withAnimation {
 					switch settings.gameMode {
 						case .computerVsComputer:
-							showComputer1 = true; showComputer2 = true
+							settings.player1.kind = .computer
+							settings.player2.kind = .computer
 						case .personVsComputer:
-							showComputer1 = true; showComputer2 = false
+							settings.player1.kind = .person
+							settings.player2.kind = .computer
 						default:
-							showComputer1 = false; showComputer2 = false
+							settings.player1.kind = .person
+							settings.player2.kind = .person
                     }
                 }
             }

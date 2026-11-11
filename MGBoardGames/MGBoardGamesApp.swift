@@ -17,7 +17,6 @@ struct MGBoardGamesApp: App {
 }
 
 struct GameSelectionView: View {
-
 	var body: some View {
 		NavigationStack {
 			ScrollView {
@@ -38,6 +37,7 @@ struct GameSelectionView: View {
 				.padding(.horizontal)
 			}
 			.navigationTitle("Select A Game")
+			.navigationBarTitleDisplayMode(.inline)
 			.navigationDestination(for: GameList.self) { selected in
 				ItemDetailView(item: selected)
 			}
@@ -68,7 +68,6 @@ struct ItemDetailView: View {
 					}
 			}
 		}
-		//.navigationTitle(item.name)
 		.toolbar {
 			ToolbarItem(placement: .principal) {
 				Text(item.name)

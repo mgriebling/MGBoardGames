@@ -8,9 +8,9 @@
 import SwiftUI
 
 enum GameModes: String, CaseIterable, Identifiable, Codable {
-    case personVsComputer
-    case personVsPerson
-    case computerVsComputer
+    case personVsComputer 	= "Person vs Computer"
+    case personVsPerson   	= "Person vs Person"
+    case computerVsComputer = "Computer vs Computer"
     case unknown
     
     var id: String { self.rawValue }

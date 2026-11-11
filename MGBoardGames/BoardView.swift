@@ -10,7 +10,7 @@ import SwiftUI
 struct BoardView<E: GamePieceEnum, ItemView: View>: View {
 	var board: GameBoard<E>
 	var frameSize: CGFloat
-	var viewForItem: (E.Enum, BoardCoordinate) -> ItemView
+	var viewForItem: (E.Enum, Position) -> ItemView
 	
     public var body: some View {
         Group {
@@ -23,17 +23,14 @@ struct BoardView<E: GamePieceEnum, ItemView: View>: View {
 			LazyVGrid(columns: gridColumns, spacing: 0) {
 				ForEach(0..<board.rows, id: \.self) { row in
 					ForEach(0..<board.columns) { column in
-						let location = BoardCoordinate(row: row, col: column)
-						let item = board.pieces[location] ?? E.empty
-						self.viewForItem(item, location)
+						let location = Position(row: row, col: column)
+						self.viewForItem(board[location], location)
 							.font(.system(size: 10*cellSize/12))
 							.aspectRatio(1, contentMode: .fit)
 					}
 				}
 			}
-			.onAppear {
-				print("Cell size = \(cellSize)")
-			}
+			.aspectRatio(1, contentMode: .fit)
 			.padding(padding)
 			.background(Color(.systemIndigo))
 			.clipShape(RoundedRectangle(cornerRadius: radius))
@@ -45,3 +42,4 @@ struct BoardView<E: GamePieceEnum, ItemView: View>: View {
         }
     }
 }
+

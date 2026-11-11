@@ -48,7 +48,7 @@ extension GameBoard {
 		{ row, column in row -= 1; column -= 1 }    // move left down
 	] }
 	
-	mutating func move(to position: BoardCoordinate, for activeColor: E.Enum) {
+	mutating func move(to position: Position, for activeColor: E.Enum) {
 		pieces[position] = activeColor
 		
 		// check the eight playing directions and flip pieces
@@ -57,7 +57,7 @@ extension GameBoard {
 		}
 	}
 	
-	mutating func flipOpponentsPieces(for position: BoardCoordinate, with move: NavigationFunction, to state: E.Enum) {
+	mutating func flipOpponentsPieces(for position: Position, with move: NavigationFunction, to state: E.Enum) {
 		// are any pieces surrounded in this direction?
 		guard moveSurroundingPieces(for: position, with: move, to: state) else { return }
 		
@@ -67,7 +67,7 @@ extension GameBoard {
 		repeat {
 			// advance to the next cell
 			move(&row, &column)
-			let pos = BoardCoordinate(row: row, col: column)
+			let pos = Position(row: row, col: column)
 			if let value = pieces[pos] {
 				currentState = value
 			} else {
@@ -78,7 +78,7 @@ extension GameBoard {
 		} while column >= 0 && column < columns && row >= 0 && row < rows && currentState == opponentsState
 	}
 	
-	func moveSurroundingPieces(for selected: BoardCoordinate, with move: NavigationFunction, to state: E.Enum) -> Bool {
+	func moveSurroundingPieces(for selected: Position, with move: NavigationFunction, to state: E.Enum) -> Bool {
 		var row = selected.row, column = selected.col  // make these mutable
 
 		// advances row, column values to next cell
@@ -87,7 +87,7 @@ extension GameBoard {
 		// check within the bounds of the board
 		var index = 1
 		while row >= 0 && row < rows && column >= 0 && column < columns {
-			let currentState = pieces[BoardCoordinate(row: row, col: column)]
+			let currentState = pieces[Position(row: row, col: column)]
 			// the cell that is immediate neighbour must be of the opposite colour
 			if index == 1 {
 				if currentState != E.flip(state) { return false }
@@ -121,8 +121,20 @@ extension GameBoard {
 	var activePlayer: Player
 	var activeColor: E.Enum { color(for: activePlayer) }
 	
-	var player1: Player // { settings.player1 }
-	var player2: Player // { settings.player2 }
+	var player1: Player {
+		didSet {
+			if player1.isStarting {
+				activePlayer = player1
+			}
+		}
+	}
+	var player2: Player {
+		didSet {
+			if player2.isStarting {
+				activePlayer = player1
+			}
+		}
+	}
 	
 	let errorPiece = ReversiPieces.invalid
 	let whitePiece = ReversiPieces.whitePiece
@@ -147,25 +159,21 @@ extension GameBoard {
 		setupInitialPieces()
 	}
 	
+	func newGame() {
+		self.board = ReversiBoard(rows: rows, columns: columns)
+		setupInitialPieces()
+	}
+	
 	func color(for player: Player) -> E.Enum {
 		player.colour == .black ? ReversiPieces.blackPiece : .whitePiece
 	}
 	
-	func gameStateChanged() {
-		if activePlayer.kind == .computer {
-			// pause for 1 second, then make a move
-			DispatchQueue.main.asyncAfter(deadline: .now()+1) {
-				self.makeNextMove()
-			}
-		}
-	}
-	
-	func validMoves(for player: Player) -> [BoardCoordinate] {
-		var moves = [BoardCoordinate]()
+	func validMoves(for player: Player) -> [Position] {
+		var moves = [Position]()
 		for row in 0..<rows {
 			for column in 0..<columns {
-				if isValidMove(to: BoardCoordinate(row: row, col: column), for: player) {
-					moves.append(BoardCoordinate(row: row, col: column))
+				if isValidMove(to: Position(row: row, col: column), for: player) {
+					moves.append(Position(row: row, col: column))
 				}
 			}
 		}
@@ -183,10 +191,10 @@ extension GameBoard {
 		if canPlayerMakeMove(nextPlayerTemp) { activePlayer = nextPlayerTemp }
 	}
 	
-	/// Computer algorithm to decide on the next move.  Check *n* moves ahead and see
+	/// Simple computer algorithm to decide on the next move.  Check one move ahead and see
 	/// which play results in the highest score.
 	func makeNextMove() {
-		let Empty = BoardCoordinate(row: -1, col: -1)
+		let Empty = Position(row: -1, col: -1)
 		var bestMove = Empty
 		var bestScore = Int.min
 		
@@ -213,17 +221,17 @@ extension GameBoard {
 		}
 	}
 	
-	subscript(_ position: BoardCoordinate) -> E.Enum {
+	subscript(_ position: Position) -> E.Enum {
 		get { board[position] }
 		set { board[position] = newValue }
 	}
 	
 	subscript(_ row: Int, col: Int) -> E.Enum {
-		get { self[BoardCoordinate(row: row, col: col)] }
-		set { self[BoardCoordinate(row: row, col: col)] = newValue }
+		get { self[Position(row: row, col: col)] }
+		set { self[Position(row: row, col: col)] = newValue }
 	}
 	
-	func isValidMove(to selected: BoardCoordinate, for player: Player) -> Bool {
+	func isValidMove(to selected: Position, for player: Player) -> Bool {
 		guard board.pieces[selected] == nil else { return false }
 		
 		// check moves in each direction
@@ -239,32 +247,37 @@ extension GameBoard {
 		let halfRow = board.rows/2
 		let halfColumn = board.columns/2
 	
-		board.move(to: BoardCoordinate(row: halfRow-1, col:halfColumn-1), for: whitePiece)
-		board.move(to: BoardCoordinate(row: halfRow,   col:halfColumn),   for: whitePiece)
-		board.move(to: BoardCoordinate(row: halfRow-1, col:halfColumn),   for: blackPiece)
-		board.move(to: BoardCoordinate(row: halfRow,   col:halfColumn-1), for: blackPiece)
+		board.move(to: Position(row: halfRow-1, col:halfColumn-1), for: whitePiece)
+		board.move(to: Position(row: halfRow,   col:halfColumn),   for: whitePiece)
+		board.move(to: Position(row: halfRow-1, col:halfColumn),   for: blackPiece)
+		board.move(to: Position(row: halfRow,   col:halfColumn-1), for: blackPiece)
 	}
 	
 	func canPlayerMakeMove(_ state: Player) -> Bool {
 		for row in 0..<rows {
 			for column in 0..<columns {
-				if isValidMove(to: BoardCoordinate(row: row, col: column), for: state) { return true }
+				if isValidMove(to: Position(row: row, col: column), for: state) { return true }
 			}
 		}
 		return false
 	}
 	
-	func handleTap(at selected: BoardCoordinate) {
+	func handleTap(at selected: Position) {
 		guard board.isValid(coordinate: selected) else { return }
 		if setPiece(selected) {
-			// all is ok
+			saveGame() // all is ok
 		} else {
+			let pieceInPlace = board[selected]
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
-				self.board.clear(selected) // clear illegal move square after some time
+				// clear illegal move square after some time
+				if pieceInPlace == .blank {
+					self.board.clear(selected)
+				} else {
+					self.board[selected] = pieceInPlace
+				}
 			}
 		}
-		saveGame()
 	}
     
     // MARK: - Intents
@@ -287,13 +300,14 @@ extension GameBoard {
 		self.board = ReversiBoard(rows: rows, columns: columns)
     }
     
-	func setPiece(_ selected: BoardCoordinate) -> Bool {
+	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
 			board.move(to: selected, for: color(for: activePlayer))
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")
 			if activePlayer.kind == .computer {
+				print("Computer moving...")
                 Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _flipped in
                     self.makeNextMove()
                 }
@@ -302,11 +316,6 @@ extension GameBoard {
         }
         return false
     }
-    
-    func newGame() {
-		self.board = ReversiBoard(rows: rows, columns: columns)
-    }
-    
 }
 
 
