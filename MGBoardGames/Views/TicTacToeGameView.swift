@@ -1,5 +1,5 @@
 //
-//  ReversiGameView.swift
+//  TicTacToeGameView.swift
 //  MGBoardGames
 //
 //  Created by Michael Griebling on 06.11.2026.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct ReversiGameView: View {
-	var game: ReversiGame
+struct TicTacToeGameView: View {
+	var game: TicTacToeGame
 
 	@State private var showMoves = false
 	@State private var showPreferences = false
@@ -19,7 +19,7 @@ struct ReversiGameView: View {
 	@AppStorage(.settings) private var settings
 	
 	var body: some View {
-		var scale: CGFloat = isLandscape ? 4 : 15
+		let scale: CGFloat = isLandscape ? 4 : 15
 		GeometryReader { geometry in
 			let newGame = Button("New Game") {
 				withAnimation { game.newGame() }
@@ -105,19 +105,18 @@ struct ReversiGameView: View {
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
 		let piece = game.color(for: player)
-		let score = game.board.score(game.color(for: player))
+		// let score = game.board.score(game.color(for: player))
 		let shadow = Color.black
-		let color = player.colour == .black ? Color.white : .black
+		// let color = player.colour == .black ? Color.white : .black
 		let active = player.colour == game.activePlayer.colour
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
 		VStack(spacing: 0) {
 			ZStack {
-				Text(piece.description).font(.system(size: fontSize * 2))
+				Image(systemName: piece.description)
+					.resizable()
+					.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
 					.shadow(color: shadow, radius: 20, x: 5, y: 5)
 					.padding(5)
-				Text("\(score)")
-					.foregroundColor(color).bold()
-					.font(.system(size: fontSize))
 			}
 			Text(player.name)
 				.padding(.bottom, 4)
@@ -132,20 +131,24 @@ struct ReversiGameView: View {
 	}
 	
 	@ViewBuilder
-	func pieceView(piece: ReversiPieces, position: Position) -> some View {
+	func pieceView(piece: TicTacToePieces, position: Position) -> some View {
 		ZStack {
 			Rectangle().stroke(Color(.systemGray3))
 			Group {
-				if piece == ReversiPieces.empty {
+				if piece == TicTacToePieces.empty {
 					if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
-						Image(systemName: "checkmark.circle")
-							.foregroundColor(game.activeColor == .whitePiece ? Color.white : .black)
-							.opacity(0.5)
+						let name = game.activeColor == .blackPiece ? "x.circle" : "o.circle"
+						Image(systemName: name)
+							.resizable()
+							.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
+							.opacity(0.4)
 					} else {
-						Text(piece.description)
+						Text(" ")
 					}
 				} else {
-					Text(piece.description)
+					Image(systemName: piece.description)
+						.resizable()
+						.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
 				}
 			}
 			.shadow(color: .black.opacity(0.5), radius: 2, x:2, y:2)
@@ -159,6 +162,7 @@ struct ReversiGameView: View {
 				let boardWidth = min(size.width, size.height)
 				BoardView(board: game.board, frameSize: boardWidth) { piece, position in
 					pieceView(piece: piece, position: position)
+						.contentShape(Rectangle())
 						.onTapGesture {
 							game.handleTap(at: position)
 						}
@@ -182,6 +186,6 @@ struct ReversiGameView: View {
 
 #Preview {
 	let settings = Settings()
-	let game = ReversiGame(player1: settings.player1, player2: settings.player2)
-	ReversiGameView(game: game)
+	let game = TicTacToeGame(player1: settings.player1, player2: settings.player2)
+	TicTacToeGameView(game: game)
 }

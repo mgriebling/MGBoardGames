@@ -12,7 +12,7 @@ protocol Game {
 	associatedtype E: GamePieceEnum
 	
 	var name: String { get }
-	var board: GameBoard<E> { get }
+	// var board: any Board { get }
 	var activePlayer: Player { get }
 	var gameIsOver: Bool { get }
 	var rows: Int { get }
@@ -25,6 +25,5 @@ protocol Game {
 	func makeNextMove()
 	func isValidMove(to position: Position, for player: Player) -> Bool
 	
-	subscript(row: Int, column: Int) -> E.Enum { get set }
 	subscript(position: Position) -> E.Enum { get set }
 }

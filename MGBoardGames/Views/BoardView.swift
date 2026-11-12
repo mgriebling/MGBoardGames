@@ -7,10 +7,10 @@
 
 import SwiftUI
 
-struct BoardView<E: GamePieceEnum, ItemView: View>: View {
-	var board: GameBoard<E>
+struct BoardView<Item, ItemView: View>: View {
+	var board: any Board
 	var frameSize: CGFloat
-	var viewForItem: (E.Enum, Position) -> ItemView
+	var viewForItem: (Item, Position) -> ItemView
 	
     public var body: some View {
         Group {
@@ -24,7 +24,7 @@ struct BoardView<E: GamePieceEnum, ItemView: View>: View {
 				ForEach(0..<board.rows, id: \.self) { row in
 					ForEach(0..<board.columns) { column in
 						let location = Position(row: row, col: column)
-						self.viewForItem(board[location], location)
+						self.viewForItem(board[location] as! Item, location)
 							.font(.system(size: 10*cellSize/12))
 							.aspectRatio(1, contentMode: .fit)
 					}

@@ -48,13 +48,16 @@ struct GameSelectionView: View {
 struct ItemDetailView: View {
 	let item: GameList
 	
-	@State var reversi = ReversiGame(player1: Player(name: "Dummy1", colour: .black), player2: Player(name: "Dummy2", colour: .white))
+	static let player1 = Player(name: "Dummy1", colour: .black)
+	static let player2 = Player(name: "Dummy2", colour: .white)
+	@State var reversi = ReversiGame(player1: player1, player2: player2)
+	@State var tictactoe = TicTacToeGame(player1: player1, player2: player2)
 	
 	var body: some View {
 		Group {
 			switch item {
 				case .reversi: ReversiGameView(game: reversi)
-				// case .tictactoe: TicTacToeGameView(game: tictactoe)
+				case .tictactoe: TicTacToeGameView(game: tictactoe)
 				default:
 					VStack(spacing: 20) {
 						RoundedRectangle(cornerRadius: 20)

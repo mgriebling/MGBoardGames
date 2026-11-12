@@ -8,48 +8,71 @@
 import Foundation
 
 enum ReversiPieces: Int, GamePieceEnum  {
+
 	case blackPiece = 0, whitePiece, blank, invalid
+	
+	var isWhite: Bool { self == .whitePiece }
+	var isBlack: Bool { self == .blackPiece }
+	var isEmpty: Bool { self == .blank }
 	
 	var description: String {
 		switch self {
 			case .invalid:	  "🚫"
 			case .blackPiece: "⚫️"
 			case .whitePiece: "⚪️"
-			default:          " "
+			default:          ""
 		}
 	}
 	
-	var flipped: Self {
-		if self == .blackPiece { return .whitePiece }
-		if self == .whitePiece { return .blackPiece }
-		return self
-	}
-	
-	static var error: ReversiPieces { .invalid }
-	static var empty: ReversiPieces { .blank }
+	static var error: Self { .invalid }
+	static var empty: Self { .blank }
 	static var start: Self { .blackPiece }
 	
 	static func flip(_ x: ReversiPieces) -> ReversiPieces {
-		x == .blackPiece ? .whitePiece : .blackPiece
+		switch x {
+			case .blackPiece: .whitePiece
+			case .whitePiece: .blackPiece
+			default: x
+		}
 	}
 }
 
-extension GameBoard {
-	// Movement functions inspired by SHCReversi demo
-	typealias NavigationFunction = (inout Int, inout Int) -> ()
-	var moves: [NavigationFunction] { [
-		{ row, column in column += 1 },             // move right
-		{ row, column in column -= 1 },             // move left
-		{ row, column in row -= 1 },                // move up
-		{ row, column in row += 1 },                // move down
-		{ row, column in row += 1; column += 1 },   // move right up
-		{ row, column in row -= 1; column += 1 },   // move right down
-		{ row, column in row += 1; column -= 1 },   // move left up
-		{ row, column in row -= 1; column -= 1 }    // move left down
-	] }
+struct ReversiBoard: Board {
+	typealias E = ReversiPieces
 	
+	let rows: Int
+	let columns: Int
+	
+	/// Game board with rows x columns positions
+	private var pieces: [E] = []
+	
+	init(rows: Int, columns: Int) {
+		self.rows = rows
+		self.columns = columns
+		clearAll()
+	}
+	
+	mutating func clear(_ position: Position) { self[position] = E.blank }
+	
+	mutating func clearAll() {
+		pieces = Array(repeating: E.empty, count: rows * columns)
+	}
+	
+	// Movement functions for reversi inspired by SHCReversi demo
+	let moves: [NavigationFunction] = [
+		{ pos in pos.col += 1 },             	// move right
+		{ pos in pos.col -= 1 },             	// move left
+		{ pos in pos.row -= 1 },                // move up
+		{ pos in pos.row += 1 },                // move down
+		{ pos in pos.row += 1; pos.col += 1 },  // move right up
+		{ pos in pos.row -= 1; pos.col += 1 },  // move right down
+		{ pos in pos.row += 1; pos.col -= 1 },  // move left up
+		{ pos in pos.row -= 1; pos.col -= 1 }   // move left down
+	]
+	
+	// Placement of reversi pieces along with opponent flipping
 	mutating func move(to position: Position, for activeColor: E.Enum) {
-		pieces[position] = activeColor
+		self[position] = activeColor
 		
 		// check the eight playing directions and flip pieces
 		for move in moves {
@@ -57,37 +80,31 @@ extension GameBoard {
 		}
 	}
 	
-	mutating func flipOpponentsPieces(for position: Position, with move: NavigationFunction, to state: E.Enum) {
+	mutating func flipOpponentsPieces(for position: Position, with move: NavigationFunction, to state: E) {
 		// are any pieces surrounded in this direction?
 		guard moveSurroundingPieces(for: position, with: move, to: state) else { return }
 		
-		let opponentsState = E.flip(state)
-		var currentState = E.empty
-		var row = position.row, column = position.col      // need mutability
+		let opponentsState = ReversiPieces.flip(state)
+		var currentState = ReversiPieces.blank
+		var pos = position      // need mutability
 		repeat {
 			// advance to the next cell
-			move(&row, &column)
-			let pos = Position(row: row, col: column)
-			if let value = pieces[pos] {
-				currentState = value
-			} else {
-				currentState = E.empty
-			}
-			pieces[pos] = state
-			
-		} while column >= 0 && column < columns && row >= 0 && row < rows && currentState == opponentsState
+			move(&pos)
+			currentState = self[pos]
+			self[pos] = state
+		} while pos.col >= 0 && pos.col < columns && pos.row >= 0 && pos.row < rows && currentState == opponentsState
 	}
 	
-	func moveSurroundingPieces(for selected: Position, with move: NavigationFunction, to state: E.Enum) -> Bool {
-		var row = selected.row, column = selected.col  // make these mutable
+	func moveSurroundingPieces(for selected: Position, with move: NavigationFunction, to state: ReversiPieces) -> Bool {
+		var pos = selected
 
 		// advances row, column values to next cell
-		move(&row, &column)
+		move(&pos)
 
 		// check within the bounds of the board
 		var index = 1
-		while row >= 0 && row < rows && column >= 0 && column < columns {
-			let currentState = pieces[Position(row: row, col: column)]
+		while pos.row >= 0 && pos.row < rows && pos.col >= 0 && pos.col < columns {
+			let currentState = self[pos]
 			// the cell that is immediate neighbour must be of the opposite colour
 			if index == 1 {
 				if currentState != E.flip(state) { return false }
@@ -101,20 +118,45 @@ extension GameBoard {
 			index += 1
 			
 			// advance to the next cell
-			move(&row, &column)
+			move(&pos)
 		}
 		return false
 	}
 	
-	func score(_ playerColor: E.Enum) -> Int {
-		pieces.count { (key, value) in
-			playerColor == value
+	func score(_ playerColor: E) -> Int {
+		pieces.count { $0 == playerColor }
+	}
+	
+	mutating func set(positions: [Position], to piece: E) {
+		positions.forEach { self[$0] = piece }
+	}
+	
+	private func index(from pos: Position) -> Int {
+		pos.col + rows * pos.row
+	}
+	
+	subscript(position: Position) -> E {
+		get {
+			let index = index(from: position)
+			guard index >= 0 && index < pieces.count else { return E.blank }
+			return pieces[index]
+		}
+		set {
+			let index = index(from: position)
+			guard index >= 0 && index < pieces.count else { return }
+			pieces[index] = newValue
 		}
 	}
+	
+	enum CodingKeys: String, CodingKey {
+		case rows, columns, pieces
+		// moves
+	}
+	
 }
 
 @Observable final class ReversiGame: Game {
-	typealias ReversiBoard = GameBoard<ReversiPieces>
+	typealias E = ReversiPieces
 	
 	let name = "Reversi"
 	var board: ReversiBoard
@@ -148,6 +190,7 @@ extension GameBoard {
 		(player1Score + player2Score == rows * columns) // board is full
 	}
 	
+	/// Convenience getters
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
@@ -226,13 +269,8 @@ extension GameBoard {
 		set { board[position] = newValue }
 	}
 	
-	subscript(_ row: Int, col: Int) -> E.Enum {
-		get { self[Position(row: row, col: col)] }
-		set { self[Position(row: row, col: col)] = newValue }
-	}
-	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard board.pieces[selected] == nil else { return false }
+		guard board[selected] == .blank else { return false }
 		
 		// check moves in each direction
 		let playerColor = color(for: player)
@@ -263,7 +301,6 @@ extension GameBoard {
 	}
 	
 	func handleTap(at selected: Position) {
-		guard board.isValid(coordinate: selected) else { return }
 		if setPiece(selected) {
 			saveGame() // all is ok
 		} else {
