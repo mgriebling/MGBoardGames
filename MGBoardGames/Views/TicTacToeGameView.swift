@@ -105,16 +105,16 @@ struct TicTacToeGameView: View {
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
 		let piece = game.color(for: player)
-		// let score = game.board.score(game.color(for: player))
 		let shadow = Color.black
-		// let color = player.colour == .black ? Color.white : .black
+		let size = 2.5 * fontSize
 		let active = player.colour == game.activePlayer.colour
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
 		VStack(spacing: 0) {
 			ZStack {
 				Image(systemName: piece.description)
-					.resizable()
-					.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
+					.font(.system(size: size, weight: .heavy, design: .rounded))
+					.foregroundStyle(Color(.systemGray))
+					.frame(width: size, height: size)
 					.shadow(color: shadow, radius: 20, x: 5, y: 5)
 					.padding(5)
 			}
@@ -133,22 +133,23 @@ struct TicTacToeGameView: View {
 	@ViewBuilder
 	func pieceView(piece: TicTacToePieces, position: Position) -> some View {
 		ZStack {
+			let size = 2.5 * fontSize
 			Rectangle().stroke(Color(.systemGray3))
 			Group {
 				if piece == TicTacToePieces.empty {
 					if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
 						let name = game.activeColor == .blackPiece ? "x.circle" : "o.circle"
 						Image(systemName: name)
-							.resizable()
-							.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
-							.opacity(0.4)
-					} else {
-						Text(" ")
+							.font(.system(size: size, weight: .heavy, design: .rounded))
+							.foregroundStyle(Color(.systemGray))
+							.frame(width: size, height: size)
+							.opacity(0.7)
 					}
 				} else {
 					Image(systemName: piece.description)
-						.resizable()
-						.frame(width: 1.5 * fontSize, height: 1.5 * fontSize)
+						.font(.system(size: size, weight: .heavy, design: .rounded))
+						.foregroundStyle(Color(.systemGray))
+						.frame(width: size, height: size)
 				}
 			}
 			.shadow(color: .black.opacity(0.5), radius: 2, x:2, y:2)
@@ -173,10 +174,18 @@ struct TicTacToeGameView: View {
 			if game.gameIsOver {
 				VStack {
 					Spacer()
-					let winner = game.player1Score > game.player2Score ? game.player1 : game.player2
-					Text("Game Over!\n\(winner.name) Wins!").font(.system(size: 3*fontSize/2, weight: .heavy))
-						.foregroundColor(.red)
-						.shadow(color: .black, radius: 10)
+					Group {
+						if game.isDraw {
+							Text("Game was a Draw!")
+						} else {
+							let winner = game.activePlayer == game.player1 ? game.player2 : game.player1
+							Text("Game Over!\n\(winner.name) Wins!")
+							
+						}
+					}
+					.font(.system(size: 3*fontSize/2, weight: .heavy))
+					.foregroundColor(.red)
+					.shadow(color: .black, radius: 10)
 					Spacer()
 				}
 			}

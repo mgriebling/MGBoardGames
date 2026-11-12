@@ -22,11 +22,11 @@ enum TicTacToePieces: Int, GamePieceEnum  {
 	var isWhite: Bool { self == .whitePiece }
 	var isBlack: Bool { self == .blackPiece }
 	var isEmpty: Bool { self == .blank }
+	var other: Self { self.isBlack ? .whitePiece : .blackPiece }
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
 	static var start: Self { .blackPiece }
-	static func flip(_ x: Self) -> Self { x }
 }
 
 struct TicTacToeBoard: Board {
@@ -37,6 +37,9 @@ struct TicTacToeBoard: Board {
 	
 	/// Game board with rows x columns positions
 	private var pieces: [E] = []
+	
+	/// Count of all pieces on the board
+	var count: Int { pieces.count { !$0.isEmpty } }
 	
 	init(rows: Int, columns: Int) {
 		self.rows = rows
@@ -55,8 +58,45 @@ struct TicTacToeBoard: Board {
 		self[position] = activeColor
 	}
 	
-	func score(_ playerColor: E) -> Int {
-		pieces.count { $0 == playerColor }
+	private let ThreeInARow = [
+		[ 0, 1, 2 ],
+		[ 3, 4, 5 ],
+		[ 6, 7, 8 ],
+		[ 0, 3, 6 ],
+		[ 1, 4, 7 ],
+		[ 2, 5, 8 ],
+		[ 0, 4, 8 ],
+		[ 2, 4, 6 ]
+	]
+	
+	private let HeuristicScore = [
+		[    0,  -1,  -10,  -100 ],
+		[    1,   0,    0,     0 ],
+		[   10,   0,    0,     0 ],
+		[  100,   0,    0,     0 ]
+	]
+	
+	// Determine a heuristic score
+	func score(_ player: E) -> Int {
+		// https://kartikkukreja.wordpress.com/2013/03/30/heuristic-function-for-tic-tac-toe/
+		var score = 0
+		let opponent = player.other
+
+		for i in 0..<ThreeInARow.count {
+			var players = 0
+			var others = 0
+			for j in 0..<ThreeInARow[0].count {
+				let piece = pieces[ThreeInARow[i][j]]
+				if piece == player {
+					players += 1
+				} else if piece == opponent {
+					others += 1
+				}
+			}
+			score += HeuristicScore[players][others]
+		}
+		
+		return score
 	}
 	
 	mutating func set(positions: [Position], to piece: E) {
@@ -82,7 +122,7 @@ struct TicTacToeBoard: Board {
 	
 	enum CodingKeys: String, CodingKey {
 		case rows, columns, pieces
-		// moves
+		// excludes ThreeInARow and HeuristicScore
 	}
 }
 
@@ -93,6 +133,7 @@ struct TicTacToeBoard: Board {
 	var board: TicTacToeBoard
 	var activePlayer: Player
 	var activeColor: E.Enum { color(for: activePlayer) }
+	var isDraw: Bool = false
 	
 	var player1: Player {
 		didSet {
@@ -117,7 +158,41 @@ struct TicTacToeBoard: Board {
 	var player2Score: Int { board.score(color(for: player2)) }
 	
 	var gameIsOver: Bool {
-		(player1Score + player2Score == rows * columns) // board is full
+		let incRight: NavigationFunction = { pos in pos.col += 1 }
+		let incDown: NavigationFunction = { pos in pos.row += 1 }
+		let incDR: NavigationFunction = { pos in pos.row += 1; pos.col += 1 }
+		let incDL: NavigationFunction = { pos in pos.row += 1; pos.col -= 1  }
+		let win3 =
+			threeInARow(Position(row: 0, col: 0), incRight) || // check rowa
+			threeInARow(Position(row: 1, col: 0), incRight) ||
+			threeInARow(Position(row: 2, col: 0), incRight) ||
+			threeInARow(Position(row: 0, col: 0), incDown)  || // check cols
+			threeInARow(Position(row: 0, col: 1), incDown)  ||
+			threeInARow(Position(row: 0, col: 2), incDown)  ||
+			threeInARow(Position(row: 0, col: 0), incDR)    || // check diagonals
+			threeInARow(Position(row: 0, col: 2), incDL)
+		if win3 {
+			isDraw = false
+			return true
+		} else {
+			if board.count == rows * columns {
+				// board is full & no winner
+				isDraw = true
+				return true
+			}
+		}
+		return false
+	}
+	
+	private func threeInARow(_ p: Position, _ move: NavigationFunction) -> Bool {
+		let startPiece = self[p]
+		var p = p
+		for _ in 0..<3 {
+			let piece = self[p]
+			if piece.isEmpty || startPiece != piece { return false }
+			move(&p) // next position
+		}
+		return true
 	}
 	
 	var rows: Int    { board.rows }
@@ -128,6 +203,7 @@ struct TicTacToeBoard: Board {
 		self.player1 = player1
 		self.player2 = player2
 		self.activePlayer = player1.colour == .black ? player1 : player2
+		self.isDraw = false
 		setupInitialPieces()
 	}
 	
@@ -200,16 +276,11 @@ struct TicTacToeBoard: Board {
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
 		guard board[selected] == .blank else { return false }
-		print("Invalid move to \(selected)")
 		return true
 	}
 
-	func setupInitialPieces() {
-		// No initial pieces to set up
-//		let halfRow = board.rows/2
-//		let halfColumn = board.columns/2
-//		board.move(to: Position(row: halfRow, col:halfColumn), for: blackPiece)
-	}
+	// No initial pieces to set up
+	func setupInitialPieces() {  }
 	
 	func canPlayerMakeMove(_ state: Player) -> Bool {
 		for row in 0..<rows {
@@ -221,8 +292,7 @@ struct TicTacToeBoard: Board {
 	}
 	
 	func handleTap(at selected: Position) {
-		print("Handling tap...")
-//		guard isValidMove(to: selected, for: activePlayer) else { return }
+		guard !gameIsOver else { return }
 		if setPiece(selected) {
 			saveGame() // all is ok
 		} else {

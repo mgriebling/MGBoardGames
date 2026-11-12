@@ -301,6 +301,7 @@ struct ReversiBoard: Board {
 	}
 	
 	func handleTap(at selected: Position) {
+		guard !gameIsOver else { return }
 		if setPiece(selected) {
 			saveGame() // all is ok
 		} else {
