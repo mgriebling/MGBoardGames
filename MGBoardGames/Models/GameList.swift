@@ -32,7 +32,7 @@ enum GameList : Codable, CaseIterable, Identifiable {
 			case .mill: 		.reversi
 			case .tictactoe: 	.tictactoe
 			case .connectfour: 	.reversi
-			case .gomoku: 		.reversi
+			case .gomoku: 		.gomoku
 			case .chess: 		.reversi
 			case .checkers: 	.reversi
 		}

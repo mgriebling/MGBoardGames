@@ -12,13 +12,12 @@ protocol Game {
 	associatedtype E: GamePieceEnum
 	
 	var name: String { get }
-	// var board: any Board { get }
 	var activePlayer: Player { get }
 	var gameIsOver: Bool { get }
 	var rows: Int { get }
 	var columns: Int { get }
 	
-	init(rows: Int, columns: Int, player1: Player, player2: Player)
+	init(rows: Int, columns: Int)
 	func canPlayerMakeMove(_ player: Player) -> Bool
 	func setupInitialPieces()
 	func validMoves(for player: Player) -> [Position]

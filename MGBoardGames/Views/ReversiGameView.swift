@@ -171,7 +171,8 @@ struct ReversiGameView: View {
 				VStack {
 					Spacer()
 					let winner = game.player1Score > game.player2Score ? game.player1 : game.player2
-					Text("Game Over!\n\(winner.name) Wins!").font(.system(size: 3*fontSize/2, weight: .heavy))
+					Text("Game Over!\n\(winner.name) Wins!")
+						.font(.system(size: 3*fontSize/2, weight: .heavy))
 						.foregroundColor(.red)
 						.shadow(color: .black, radius: 10)
 					Spacer()
@@ -182,7 +183,6 @@ struct ReversiGameView: View {
 }
 
 #Preview {
-	let settings = Settings()
-	let game = ReversiGame(player1: settings.player1, player2: settings.player2)
+	let game = ReversiGame()
 	ReversiGameView(game: game)
 }

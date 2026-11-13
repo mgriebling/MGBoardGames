@@ -194,11 +194,12 @@ struct ReversiBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 8, columns: Int = 8, player1: Player, player2: Player) {
+	init(rows: Int = 8, columns: Int = 8) {
+		let player1 = Player(name: "Dummy1", colour: .white)
 		self.board = ReversiBoard(rows: rows, columns: columns)
 		self.player1 = player1
-		self.player2 = player2
-		self.activePlayer = player1.colour == .black ? player1 : player2
+		self.player2 = Player(name: "Dummy2", colour: .white)
+		self.activePlayer = player1
 		setupInitialPieces()
 	}
 	

@@ -198,11 +198,12 @@ struct TicTacToeBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 3, columns: Int = 3, player1: Player, player2: Player) {
+	init(rows: Int = 3, columns: Int = 3) {
+		let player1 = Player(name: "Dummy1", colour: .white)
 		self.board = TicTacToeBoard(rows: rows, columns: columns)
 		self.player1 = player1
-		self.player2 = player2
-		self.activePlayer = player1.colour == .black ? player1 : player2
+		self.player2 = Player(name: "Dummy2", colour: .white)
+		self.activePlayer = player1
 		self.isDraw = false
 		setupInitialPieces()
 	}

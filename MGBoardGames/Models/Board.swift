@@ -10,6 +10,11 @@ import Foundation
 struct Position: Codable, Hashable, Equatable {
 	var row: Int
 	var col: Int
+	
+	/// convenience method
+	func inc(_ row: Int = 0, col: Int = 0) -> Position {
+		Position(row: self.row + row, col: self.col + col)
+	}
 }
 
 protocol GamePieceEnum : CustomStringConvertible, Codable, RawRepresentable {

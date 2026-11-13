@@ -30,7 +30,6 @@ struct TicTacToeGameView: View {
 			VStack {
 				ZStack {
 					board(size: CGSize(width: boardWidth, height: boardWidth))
-						.id(boardWidth)
 					VStack {
 						HStack(alignment: .firstTextBaseline) {
 							newGame.buttonStyle(.borderedProminent)
@@ -105,7 +104,8 @@ struct TicTacToeGameView: View {
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
 		let piece = game.color(for: player)
-		let shadow = Color.black
+		let pieceColor = Color(.black)
+		let shadow = Color.white
 		let size = 2.5 * fontSize
 		let active = player.colour == game.activePlayer.colour
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
@@ -113,7 +113,7 @@ struct TicTacToeGameView: View {
 			ZStack {
 				Image(systemName: piece.description)
 					.font(.system(size: size, weight: .heavy, design: .rounded))
-					.foregroundStyle(Color(.systemGray))
+					.foregroundStyle(pieceColor)
 					.frame(width: size, height: size)
 					.shadow(color: shadow, radius: 20, x: 5, y: 5)
 					.padding(5)
@@ -125,7 +125,7 @@ struct TicTacToeGameView: View {
 		}
 		.background {
 			Capsule(style: .circular)
-				.fill(.blue.opacity(active ? 1 : 0))
+				.fill(Color(.systemBlue).opacity(active ? 1 : 0))
 				.padding(-10)
 		}
 	}
@@ -134,21 +134,22 @@ struct TicTacToeGameView: View {
 	func pieceView(piece: TicTacToePieces, position: Position) -> some View {
 		ZStack {
 			let size = 2.5 * fontSize
-			Rectangle().stroke(Color(.systemGray3))
+			let pieceColor = Color(.black)
+			Rectangle().stroke(Color(.systemGray3), lineWidth: 3)
 			Group {
 				if piece == TicTacToePieces.empty {
 					if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
 						let name = game.activeColor == .blackPiece ? "x.circle" : "o.circle"
 						Image(systemName: name)
 							.font(.system(size: size, weight: .heavy, design: .rounded))
-							.foregroundStyle(Color(.systemGray))
+							.foregroundStyle(pieceColor)
 							.frame(width: size, height: size)
 							.opacity(0.7)
 					}
 				} else {
 					Image(systemName: piece.description)
 						.font(.system(size: size, weight: .heavy, design: .rounded))
-						.foregroundStyle(Color(.systemGray))
+						.foregroundStyle(pieceColor)
 						.frame(width: size, height: size)
 				}
 			}
@@ -177,10 +178,11 @@ struct TicTacToeGameView: View {
 					Group {
 						if game.isDraw {
 							Text("Game was a Draw!")
+								.multilineTextAlignment(.center)
 						} else {
 							let winner = game.activePlayer == game.player1 ? game.player2 : game.player1
-							Text("Game Over!\n\(winner.name) Wins!")
-							
+							Text("Game Over!\n\(winner.name)Wins!")
+								.multilineTextAlignment(.center)
 						}
 					}
 					.font(.system(size: 3*fontSize/2, weight: .heavy))
@@ -194,7 +196,6 @@ struct TicTacToeGameView: View {
 }
 
 #Preview {
-	let settings = Settings()
-	let game = TicTacToeGame(player1: settings.player1, player2: settings.player2)
+	let game = TicTacToeGame()
 	TicTacToeGameView(game: game)
 }

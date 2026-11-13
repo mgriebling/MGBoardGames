@@ -10,29 +10,31 @@ import SwiftUI
 struct BoardView<Item, ItemView: View>: View {
 	var board: any Board
 	var frameSize: CGFloat
+	var boardColor: Color = Color.backColour
 	var viewForItem: (Item, Position) -> ItemView
 	
     public var body: some View {
+		let lightBackground = Color(red: 181/255, green: 136/255, blue: 99/255)
+		let darkBackground = Color(red:240/255, green: 217/255, blue: 181/255)
         Group {
-			let frameWidth = frameSize / CGFloat(board.rows*7)
-			let cellSize = (frameSize - 2 * frameWidth) / CGFloat(board.rows)
-			let padding = cellSize / 4
-			let radius = cellSize / 5
+			let radius = 12.0
+			let cellSize = (frameSize - 2 * radius) / CGFloat(board.rows)
+			let padding = radius
 			let gridItem = GridItem(.flexible(), spacing: 0)
 			let gridColumns = [GridItem](repeating: gridItem, count: board.columns)
 			LazyVGrid(columns: gridColumns, spacing: 0) {
 				ForEach(0..<board.rows, id: \.self) { row in
-					ForEach(0..<board.columns) { column in
+					ForEach(0..<board.columns, id: \.self) { column in
 						let location = Position(row: row, col: column)
 						self.viewForItem(board[location] as! Item, location)
-							.font(.system(size: 10*cellSize/12))
+							.font(.system(size: 9*cellSize/12))
 							.aspectRatio(1, contentMode: .fit)
 					}
 				}
 			}
 			.aspectRatio(1, contentMode: .fit)
 			.padding(padding)
-			.background(Color(.systemIndigo))
+			.background(boardColor)
 			.clipShape(RoundedRectangle(cornerRadius: radius))
 			.overlay(
 				RoundedRectangle(cornerRadius: radius)
