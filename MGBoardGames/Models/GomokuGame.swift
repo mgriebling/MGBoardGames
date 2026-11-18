@@ -147,8 +147,6 @@ struct GomokuBoard: Board {
 	let whitePiece = E.whitePiece
 	let blackPiece = E.blackPiece
 	
-	var usesImages: Bool { false }
-	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }
 	

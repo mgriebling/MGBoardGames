@@ -161,6 +161,7 @@ struct ReversiBoard: Board {
 	var board: ReversiBoard
 	var activePlayer: Player
 	var activeColor: E.Enum { color(for: activePlayer) }
+	var isDraw: Bool = false
 	
 	var player1: Player {
 		didSet {
@@ -180,8 +181,6 @@ struct ReversiBoard: Board {
 	let errorPiece = ReversiPieces.invalid
 	let whitePiece = ReversiPieces.whitePiece
 	let blackPiece = ReversiPieces.blackPiece
-	
-	var usesImages: Bool { false }
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }

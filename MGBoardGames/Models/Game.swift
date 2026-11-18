@@ -19,9 +19,9 @@ protocol Game: AnyObject {
 	var player2Score: Int { get }
 	var activeColor: E.Enum { get }
 	var gameIsOver: Bool { get }
+	var isDraw: Bool { get }
 	var rows: Int { get }
 	var columns: Int { get }
-	var usesImages: Bool { get }
 	
 	init(rows: Int, columns: Int)
 	func color(for player: Player) -> E.Enum

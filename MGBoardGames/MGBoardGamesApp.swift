@@ -55,13 +55,15 @@ struct ItemDetailView: View {
 	var body: some View {
 		Group {
 			switch item {
-				case .reversi: TopGameView(game: reversi) { showMoves in
+				case .reversi: TopGameView(game: reversi) { showMoves, _ in
 					ReversiGameView(game: reversi, showMoves: showMoves)
 				}
-				case .tictactoe: TopGameView(game: tictactoe) { showMoves in
+				case .tictactoe: TopGameView(game: tictactoe) { showMoves, _ in
 					TicTacToeGameView(game: tictactoe, showMoves: showMoves)
 				}
-				case .gomoku: GomokuGameView(game: gomoku)
+				case .gomoku: TopGameView(game: gomoku) { showMoves, width in
+					GomokuGameView(game: gomoku, boardWidth: width, showMoves: showMoves)
+				}
 				default:
 					VStack(spacing: 20) {
 						RoundedRectangle(cornerRadius: 20)

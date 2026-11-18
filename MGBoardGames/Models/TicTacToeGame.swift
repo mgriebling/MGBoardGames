@@ -155,8 +155,6 @@ struct TicTacToeBoard: Board {
 	let whitePiece = TicTacToePieces.whitePiece
 	let blackPiece = TicTacToePieces.blackPiece
 	
-	var usesImages: Bool { true }
-	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }
 	

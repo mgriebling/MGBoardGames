@@ -12,6 +12,8 @@ struct SquareBoardView<Item, ItemView: View>: View {
 	var lightColor: Color = Color(.lightColour)
 	var darkColor: Color = Color(.darkColour)
 	var boardColor: Color = Color.backColour
+	var lineColor: Color = Color(.systemGray2)
+	var lineWidth: CGFloat = 1
 	let doTap: (Position) -> ()
 	var viewForItem: (Item, Position) -> ItemView
 
@@ -25,7 +27,7 @@ struct SquareBoardView<Item, ItemView: View>: View {
 						let isLight = (row + column).isMultiple(of: 2)
 						Rectangle()
 							.fill(isLight ? lightColor : darkColor)
-							.stroke(Color(.systemGray3))
+							.stroke(lineColor, lineWidth: lineWidth)
 							.overlay {
 								let position = Position(row: row, col: column)
 								let piece = board[position]
@@ -33,7 +35,6 @@ struct SquareBoardView<Item, ItemView: View>: View {
 							}
 							.contentShape(Rectangle())
 							.onTapGesture {
-								print("Tapped 2...")
 								doTap(Position(row: row, col: column))
 							}
 					}

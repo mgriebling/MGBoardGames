@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TopGameView<BView: View>: View {
 	var game: any Game
-	var gameView: (Bool) -> BView
+	var gameView: (Bool, CGFloat) -> BView
 
 	@State private var showMoves = false
 	@State private var showPreferences = false
@@ -111,7 +111,7 @@ struct TopGameView<BView: View>: View {
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
 		VStack(spacing: 0) {
 			Group {
-				if game.usesImages {
+				if piece.description.count > 1 {
 					Image(systemName: piece.description)
 						.font(.system(size: fontSize * 2, weight: .heavy, design: .rounded))
 				} else {
@@ -140,15 +140,23 @@ struct TopGameView<BView: View>: View {
 	
 	func board (size: CGSize) -> some View {
 		ZStack {
-			gameView(showMoves)
+			gameView(showMoves, boardWidth)
 			if game.gameIsOver {
 				VStack {
 					Spacer()
-					let winner = game.player1Score > game.player2Score ? game.player1 : game.player2
-					Text("Game Over!\n\(winner.name) Wins!")
-						.font(.system(size: 3*fontSize/2, weight: .heavy))
-						.foregroundColor(.red)
-						.shadow(color: .black, radius: 10)
+					Group {
+						if game.isDraw {
+							Text("Game was a Draw!")
+								.multilineTextAlignment(.center)
+						} else {
+							let winner = game.activePlayer == game.player1 ? game.player2 : game.player1
+							Text("Game Over!\n\(winner.name)Wins!")
+								.multilineTextAlignment(.center)
+						}
+					}
+					.font(.system(size: 3*fontSize/2, weight: .heavy))
+					.foregroundColor(.red)
+					.shadow(color: .black, radius: 10)
 					Spacer()
 				}
 			}
@@ -158,14 +166,14 @@ struct TopGameView<BView: View>: View {
 
 #Preview("Reversi") {
 	let game = ReversiGame()
-	TopGameView(game: game) { showMoves in
+	TopGameView(game: game) { showMoves, _ in
 		ReversiGameView(game: game, showMoves: showMoves)
 	}
 }
 
 #Preview("Tic-Tac-Toe") {
 	let game = TicTacToeGame()
-	TopGameView(game: game) { showMoves in
+	TopGameView(game: game) { showMoves, _ in
 		TicTacToeGameView(game: game, showMoves: showMoves)
 	}
 }
