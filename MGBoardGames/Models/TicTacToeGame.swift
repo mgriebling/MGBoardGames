@@ -154,8 +154,8 @@ struct TicTacToeBoard: Board {
 	let whitePiece = TicTacToePieces.whitePiece
 	let blackPiece = TicTacToePieces.blackPiece
 	
-	var player1Score: Int { board.score(color(for: player1)) }
-	var player2Score: Int { board.score(color(for: player2)) }
+	var player1Score: Int { score(for: player1) }
+	var player2Score: Int { score(for: player2) }
 	
 	var gameIsOver: Bool {
 		let incRight: NavigationFunction = { pos in pos.col += 1 }
@@ -211,6 +211,10 @@ struct TicTacToeBoard: Board {
 	func newGame() {
 		self.board = TicTacToeBoard(rows: rows, columns: columns)
 		setupInitialPieces()
+	}
+	
+	func score(for player: Player) -> Int {
+		board.score(color(for: player))
 	}
 	
 	func color(for player: Player) -> E.Enum {

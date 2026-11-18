@@ -182,8 +182,8 @@ struct ReversiBoard: Board {
 	let whitePiece = ReversiPieces.whitePiece
 	let blackPiece = ReversiPieces.blackPiece
 	
-	var player1Score: Int { board.score(color(for: player1)) }
-	var player2Score: Int { board.score(color(for: player2)) }
+	var player1Score: Int { score(for: player1) }
+	var player2Score: Int { score(for: player1) }
 	
 	var gameIsOver: Bool {
 		(!canPlayerMakeMove(player1) && !canPlayerMakeMove(player2)) ||
@@ -201,6 +201,10 @@ struct ReversiBoard: Board {
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
 		setupInitialPieces()
+	}
+	
+	func score(for player: Player) -> Int {
+		board.score(color(for: player))
 	}
 	
 	func newGame() {

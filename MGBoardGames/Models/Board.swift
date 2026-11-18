@@ -18,7 +18,7 @@ struct Position: Codable, Hashable, Equatable {
 }
 
 protocol GamePieceEnum : CustomStringConvertible, Codable, RawRepresentable {
-	associatedtype Enum: Codable, Equatable
+	associatedtype Enum: Codable, Equatable, CustomStringConvertible
 	static var empty: Enum { get }
 	static var error: Enum { get }
 	static var start: Enum { get }

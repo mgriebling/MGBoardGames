@@ -14,8 +14,6 @@ struct BoardView<Item, ItemView: View>: View {
 	var viewForItem: (Item, Position) -> ItemView
 	
     public var body: some View {
-		let lightBackground = Color(red: 181/255, green: 136/255, blue: 99/255)
-		let darkBackground = Color(red:240/255, green: 217/255, blue: 181/255)
         Group {
 			let radius = 12.0
 			let cellSize = (frameSize - 2 * radius) / CGFloat(board.rows)

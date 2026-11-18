@@ -146,8 +146,8 @@ struct GomokuBoard: Board {
 	let whitePiece = E.whitePiece
 	let blackPiece = E.blackPiece
 	
-	var player1Score: Int { board.score(color(for: player1)) }
-	var player2Score: Int { board.score(color(for: player2)) }
+	var player1Score: Int { score(for: player1) }
+	var player2Score: Int { score(for: player2) }
 	
 	var gameIsOver: Bool {
 		let incRight: NavigationFunction = { pos in pos.col += 1 }
@@ -207,6 +207,10 @@ struct GomokuBoard: Board {
 	
 	func color(for player: Player) -> E.Enum {
 		player.colour == .black ? GomokuPieces.blackPiece : .whitePiece
+	}
+	
+	func score(for player: Player) -> Int {
+		board.score(color(for: player))
 	}
 	
 	func validMoves(for player: Player) -> [Position] {

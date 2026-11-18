@@ -7,8 +7,9 @@
 
 import SwiftUI
 
-struct GomokuGameView: View {
-	var game: GomokuGame
+struct TopGameView<BView: View>: View {
+	var game: any Game
+	var gameView: (Bool) -> BView
 
 	@State private var showMoves = false
 	@State private var showPreferences = false
@@ -29,7 +30,7 @@ struct GomokuGameView: View {
 			}
 			VStack {
 				ZStack {
-					board(size: CGSize(width: boardWidth, height: boardWidth))
+					board(size: geometry.size)
 					VStack {
 						HStack(alignment: .firstTextBaseline) {
 							newGame.buttonStyle(.borderedProminent)
@@ -38,7 +39,7 @@ struct GomokuGameView: View {
 						}
 						.font(.callout.bold())
 						HStack {
-							if isLandscape && game.activeColor == .whitePiece {
+							if isLandscape && game.activePlayer.colour == .white {
 								Spacer()
 							}
 							Text("\(game.activePlayer.name)'s Move")
@@ -46,7 +47,7 @@ struct GomokuGameView: View {
 								.padding(.top, geometry.size.height/scale)
 								.padding(.trailing, -15)
 								.padding(.leading, -10)
-							if isLandscape && game.activeColor == .blackPiece {
+							if isLandscape && game.activePlayer.colour == .black {
 								Spacer()
 							}
 						}
@@ -66,14 +67,7 @@ struct GomokuGameView: View {
 			}
 			.onAppear {
 				determineWidth(size: geometry.size)
-				game.player1 = settings.player1
-				game.player2 = settings.player2
-			}
-			.onChange(of: settings.player1) {
-				game.player1 = settings.player1
-			}
-			.onChange(of: settings.player2) {
-				game.player2 = settings.player2
+				game.set(player1: settings.player1, player2: settings.player2)
 			}
 			.onChange(of: geometry.size) {
 				determineWidth(size: geometry.size)
@@ -107,18 +101,24 @@ struct GomokuGameView: View {
 		}
 	}
 	
+	
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
 		let piece = game.color(for: player)
-		let score = game.board.score(game.color(for: player))
+		let score = game.score(for: player)
 		let shadow = Color.black
 		let color = player.colour == .black ? Color.white : .black
 		let active = player.colour == game.activePlayer.colour
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
 		VStack(spacing: 0) {
-			Text(piece.description).font(.system(size: fontSize * 2))
-				.shadow(color: shadow, radius: 20, x: 5, y: 5)
-				.padding(5)
+			ZStack {
+				Text(piece.description).font(.system(size: fontSize * 2))
+					.shadow(color: shadow, radius: 20, x: 5, y: 5)
+					.padding(5)
+				Text("\(score)")
+					.foregroundColor(color).bold()
+					.font(.system(size: fontSize))
+			}
 			Text(player.name)
 				.padding(.bottom, 4)
 				.foregroundColor(textColor).bold(active)
@@ -131,94 +131,15 @@ struct GomokuGameView: View {
 		}
 	}
 	
-	@ViewBuilder
-	func pieceView(piece: GomokuPieces, position: Position) -> some View {
-		ZStack {
-			Rectangle().stroke(.clear)
-			Group {
-				if piece == GomokuPieces.empty {
-					if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
-						Image(systemName: "checkmark.circle")
-							.foregroundColor(game.activeColor == .whitePiece ? Color.white : .black)
-							.opacity(0.5)
-					} else {
-						Text(piece.description)
-					}
-				} else {
-					Text(piece.description)
-				}
-			}
-			.shadow(color: .black.opacity(0.5), radius: 2, x:2, y:2)
-		}
-	}
-	
-	@ViewBuilder
-	func GomokuView(width: CGFloat) -> some View {
-		let goSize = game.columns == 19
-		let increment = width / CGFloat(game.columns+1)
-		let thickness = 1.0
-		let dotSize = 6.0
-		let dotSpacing = increment * (goSize ? 6 : 4)
-		let dotStart = increment * 4
-		let lineLength = width-CGFloat(2*increment)
-		let halfField = width/2
-		let lineColor = Color.black
-		let radius = 10.0
-		
-		Rectangle().fill(Color.backColour)
-			.clipShape(RoundedRectangle(cornerRadius: radius))
-		
-		// draw horizontal lines
-		ForEach(1...game.columns, id:\.self) { col in
-			Rectangle()
-				.foregroundStyle(lineColor)
-				.frame(width: lineLength, height: thickness)
-				.position(x: halfField, y: CGFloat(col)*increment)
-		}
-		
-		// draw vertical lines
-		ForEach(1...game.rows, id:\.self) { row in
-			Rectangle()
-				.foregroundStyle(lineColor)
-				.frame(width: thickness, height: lineLength)
-				.position(x: CGFloat(row)*increment, y: halfField)
-		}
-		
-		// draw dots at intersection points
-		ForEach(0..<3, id: \.self) { vdot in
-			ForEach(0..<3, id: \.self) { dot in
-				if goSize || vdot == dot || vdot == (dot-2) || (vdot-2) == dot {
-					Circle()
-						.foregroundStyle(lineColor)
-						.frame(width: dotSize, height: dotSize)
-						.position(x: dotStart + CGFloat(dot)*dotSpacing,
-								  y: dotStart + CGFloat(vdot)*dotSpacing)
-				}
-			}
-		}
-	}
-	
 	func board (size: CGSize) -> some View {
 		ZStack {
-			VStack {
-				Spacer(minLength: 0)
-				let boardWidth = min(size.width, size.height)
-				BoardView(board: game.board, frameSize: boardWidth, boardColor: .clear) { piece, position in
-					pieceView(piece: piece, position: position)
-						.contentShape(Rectangle()) // needed so tap works
-						.onTapGesture {
-							game.handleTap(at: position)
-						}
-				}
-				.background(GomokuView(width: boardWidth))
-				.blur(radius: game.gameIsOver ? 3 : 0)
-				Spacer(minLength: 0)
-			}
+			gameView(showMoves)
 			if game.gameIsOver {
 				VStack {
 					Spacer()
 					let winner = game.player1Score > game.player2Score ? game.player1 : game.player2
-					Text("Game Over!\n\(winner.name) Wins!").font(.system(size: 3*fontSize/2, weight: .heavy))
+					Text("Game Over!\n\(winner.name) Wins!")
+						.font(.system(size: 3*fontSize/2, weight: .heavy))
 						.foregroundColor(.red)
 						.shadow(color: .black, radius: 10)
 					Spacer()
@@ -229,6 +150,8 @@ struct GomokuGameView: View {
 }
 
 #Preview {
-	let game = GomokuGame()
-	GomokuGameView(game: game)
+	let game = ReversiGame()
+	TopGameView(game: game) { showMoves in
+		ReversiGameView(game: game, showMoves: showMoves)
+	}
 }

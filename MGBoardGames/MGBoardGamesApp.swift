@@ -55,7 +55,9 @@ struct ItemDetailView: View {
 	var body: some View {
 		Group {
 			switch item {
-				case .reversi: ReversiGameView(game: reversi)
+				case .reversi: TopGameView(game: reversi) { showMoves in
+					ReversiGameView(game: reversi, showMoves: showMoves)
+				}
 				case .tictactoe: TicTacToeGameView(game: tictactoe)
 				case .gomoku: GomokuGameView(game: gomoku)
 				default:
