@@ -21,6 +21,7 @@ protocol Game: AnyObject {
 	var gameIsOver: Bool { get }
 	var rows: Int { get }
 	var columns: Int { get }
+	var usesImages: Bool { get }
 	
 	init(rows: Int, columns: Int)
 	func color(for player: Player) -> E.Enum
@@ -38,6 +39,7 @@ protocol Game: AnyObject {
 }
 
 extension Game {
+	
 	func set(player1: Player, player2: Player) {
 		self.player1 = player1
 		self.player2 = player2

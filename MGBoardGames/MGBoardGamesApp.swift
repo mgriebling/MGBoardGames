@@ -58,7 +58,9 @@ struct ItemDetailView: View {
 				case .reversi: TopGameView(game: reversi) { showMoves in
 					ReversiGameView(game: reversi, showMoves: showMoves)
 				}
-				case .tictactoe: TicTacToeGameView(game: tictactoe)
+				case .tictactoe: TopGameView(game: tictactoe) { showMoves in
+					TicTacToeGameView(game: tictactoe, showMoves: showMoves)
+				}
 				case .gomoku: GomokuGameView(game: gomoku)
 				default:
 					VStack(spacing: 20) {

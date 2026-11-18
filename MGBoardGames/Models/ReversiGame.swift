@@ -8,7 +8,6 @@
 import Foundation
 
 enum ReversiPieces: Int, GamePieceEnum  {
-
 	case blackPiece = 0, whitePiece, blank, invalid
 	
 	var isWhite: Bool { self == .whitePiece }
@@ -181,6 +180,8 @@ struct ReversiBoard: Board {
 	let errorPiece = ReversiPieces.invalid
 	let whitePiece = ReversiPieces.whitePiece
 	let blackPiece = ReversiPieces.blackPiece
+	
+	var usesImages: Bool { false }
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }

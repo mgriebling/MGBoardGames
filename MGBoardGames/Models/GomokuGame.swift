@@ -22,6 +22,7 @@ enum GomokuPieces: Int, GamePieceEnum  {
 	var isWhite: Bool { self == .whitePiece }
 	var isBlack: Bool { self == .blackPiece }
 	var isEmpty: Bool { self == .blank }
+	
 	var other: Self { self.isBlack ? .whitePiece : .blackPiece }
 	
 	static var error: Self { .invalid }
@@ -145,6 +146,8 @@ struct GomokuBoard: Board {
 	let errorPiece = E.invalid
 	let whitePiece = E.whitePiece
 	let blackPiece = E.blackPiece
+	
+	var usesImages: Bool { false }
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }

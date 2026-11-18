@@ -22,6 +22,7 @@ enum TicTacToePieces: Int, GamePieceEnum  {
 	var isWhite: Bool { self == .whitePiece }
 	var isBlack: Bool { self == .blackPiece }
 	var isEmpty: Bool { self == .blank }
+	
 	var other: Self { self.isBlack ? .whitePiece : .blackPiece }
 	
 	static var error: Self { .invalid }
@@ -153,6 +154,8 @@ struct TicTacToeBoard: Board {
 	let errorPiece = TicTacToePieces.invalid
 	let whitePiece = TicTacToePieces.whitePiece
 	let blackPiece = TicTacToePieces.blackPiece
+	
+	var usesImages: Bool { true }
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }

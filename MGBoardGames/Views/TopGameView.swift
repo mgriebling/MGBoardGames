@@ -101,7 +101,6 @@ struct TopGameView<BView: View>: View {
 		}
 	}
 	
-	
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
 		let piece = game.color(for: player)
@@ -111,14 +110,22 @@ struct TopGameView<BView: View>: View {
 		let active = player.colour == game.activePlayer.colour
 		let textColor = active ? Color(.systemBackground) : Color(.systemGray)
 		VStack(spacing: 0) {
-			ZStack {
-				Text(piece.description).font(.system(size: fontSize * 2))
-					.shadow(color: shadow, radius: 20, x: 5, y: 5)
-					.padding(5)
-				Text("\(score)")
-					.foregroundColor(color).bold()
-					.font(.system(size: fontSize))
+			Group {
+				if game.usesImages {
+					Image(systemName: piece.description)
+						.font(.system(size: fontSize * 2, weight: .heavy, design: .rounded))
+				} else {
+					ZStack {
+						Text(piece.description)
+							.font(.system(size: fontSize * 2))
+						Text("\(score)")
+							.foregroundColor(color).bold()
+							.font(.system(size: fontSize))
+					}
+				}
 			}
+			.shadow(color: shadow, radius: 20, x: 5, y: 5)
+			.padding(5)
 			Text(player.name)
 				.padding(.bottom, 4)
 				.foregroundColor(textColor).bold(active)
@@ -149,9 +156,16 @@ struct TopGameView<BView: View>: View {
 	}
 }
 
-#Preview {
+#Preview("Reversi") {
 	let game = ReversiGame()
 	TopGameView(game: game) { showMoves in
 		ReversiGameView(game: game, showMoves: showMoves)
+	}
+}
+
+#Preview("Tic-Tac-Toe") {
+	let game = TicTacToeGame()
+	TopGameView(game: game) { showMoves in
+		TicTacToeGameView(game: game, showMoves: showMoves)
 	}
 }
