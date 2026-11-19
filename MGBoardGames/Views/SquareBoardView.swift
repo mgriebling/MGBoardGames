@@ -20,9 +20,9 @@ struct SquareBoardView<Item, ItemView: View>: View {
 	var body: some View {
 		let radius = 10.0
 		let padding = radius
-		VStack(spacing: 0) {
+		HStack(spacing: 0) {
 			ForEach(0..<board.columns, id: \.self) { column in
-				HStack(spacing: 0) {
+				VStack(spacing: 0) {
 					ForEach(0..<board.rows, id: \.self) { row in
 						let isLight = (row + column).isMultiple(of: 2)
 						Rectangle()

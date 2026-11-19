@@ -135,6 +135,7 @@ struct GomokuBoard: Board {
 	var activePlayer: Player
 	var activePiece: E.Enum { activeColor == .white ? whitePiece : blackPiece }
 	var activeColor: PlayerColor{ activePlayer.colour }
+	var selectedPiece: Position? = nil
 	var isDraw: Bool = false
 	
 	var player1: Player {

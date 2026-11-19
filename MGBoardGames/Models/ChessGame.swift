@@ -36,13 +36,28 @@ enum ChessPieces: Int, GamePieceEnum  {
 		}
 	}
 	
+	var image: ImageResource {
+		switch self {
+			case .wKing:   .whiteKing
+			case .wQueen:  .whiteQueen
+			case .wBishop: .whiteBishop
+			case .wKnight: .whiteKnight
+			case .wRook:   .whiteRook
+			case .wPawn:   .whitePawn
+			case .bKing:   .blackKing
+			case .bQueen:  .blackQueen
+			case .bBishop: .blackBishop
+			case .bKnight: .blackKnight
+			case .bRook:   .blackRook
+			case .bPawn:   .blackPawn
+			default:       .blackPawn
+		}
+	}
+	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
 	static var start: Self { .bRook }
-	
-	static func flip(_ x: ChessPieces) -> ChessPieces {
-		x
-	}
+	static func flip(_ x: ChessPieces) -> ChessPieces { x }
 }
 
 struct ChessBoard: Board {
@@ -122,22 +137,14 @@ struct ChessBoard: Board {
 	var board: ChessBoard
 	var activePlayer: Player
 	var activeColor: PlayerColor { activePlayer.colour }
-	var activePiece: E.Enum = .invalid   // nothing active yet
+	var selectedPiece: Position? = nil
 	var isDraw: Bool = false
 	
 	var player1: Player {
-		didSet {
-			if player1.isStarting {
-				activePlayer = player1
-			}
-		}
+		didSet { if player1.isStarting { activePlayer = player1 } }
 	}
 	var player2: Player {
-		didSet {
-			if player2.isStarting {
-				activePlayer = player1
-			}
-		}
+		didSet { if player2.isStarting { activePlayer = player2 } }
 	}
 	
 	let errorPiece = ChessPieces.invalid
@@ -149,9 +156,22 @@ struct ChessBoard: Board {
 	var blackPiece: ChessPieces { E.bPawn }
 	
 	var gameIsOver: Bool {
-		(!canPlayerMakeMove(player1) && !canPlayerMakeMove(player2)) ||
-		(player1Score + player2Score == rows * columns) // board is full
+		false
 	}
+	
+	let moves: [ChessPieces : [NavigationFunction]] = {
+		[.wPawn:
+			[
+				{ pos in pos.row -= 1 }, // move up 1 square
+				{ pos in pos.row -= 2 }, // move up 2 squares
+			],
+		 .bPawn:
+			 [
+				 { pos in pos.row += 1 }, // move down 1 square
+				 { pos in pos.row += 2 }, // move down 2 squares
+			 ],
+		]
+	}()
 	
 	/// Convenience getters
 	var rows: Int    { board.rows }
@@ -203,8 +223,10 @@ struct ChessBoard: Board {
 	}
 	
 	/// Simple computer algorithm to decide on the next move.  Check one move ahead and see
-	/// which play results in the highest score.
+	/// which play results in the highest score. *selectedPiece* board position must be occupied.
 	func makeNextMove() {
+		guard let selectedPiece else { return }
+		let activePiece = self[selectedPiece]
 		let Empty = Position(row: -1, col: -1)
 		var bestMove = Empty
 		var bestScore = Int.min
@@ -238,9 +260,14 @@ struct ChessBoard: Board {
 	}
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard board[selected] == .blank else { return false }
+		guard let selectedPiece else { return false }
 		
 		// check moves in each direction
+		let piece = self[selectedPiece]
+		for moves in moves[piece] {
+			
+		}
+	
 		return false
 	}
 
@@ -278,9 +305,23 @@ struct ChessBoard: Board {
 	
 	func handleTap(at selected: Position) {
 		guard !gameIsOver else { return }
+		if selectedPiece == nil, board[selected] != .empty {
+			// mark selectedPiece position on the board
+			self.selectedPiece = selected
+			return
+		} else if let selectedPiece, selected == selectedPiece {
+			// undo the selection
+			self.selectedPiece = nil
+			return
+		} else if let selectedPiece, board[selected] != .empty {
+			// pick another piece
+			self.selectedPiece = selected
+			return
+		}
 		if setPiece(selected) {
 			saveGame() // all is ok
 		} else {
+			// invalid move
 			let pieceInPlace = board[selected]
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
@@ -316,6 +357,10 @@ struct ChessBoard: Board {
     
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
+			guard let selectedPiece else { return false }
+			let activePiece = self[selectedPiece]
+			self[selectedPiece] = .empty
+			self.selectedPiece = nil
 			board.move(to: selected, for: activePiece)
 			print("Player = \(activePlayer.name)")
 			switchTurns()

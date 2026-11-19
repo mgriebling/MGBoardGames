@@ -14,7 +14,7 @@ protocol Game: AnyObject {
 	var name: String { get }
 	var activePlayer: Player { get }
 	var activeColor: PlayerColor { get }
-	var activePiece: E.Enum { get }
+	var selectedPiece: Position? { get }
 	var player1: Player { get set }
 	var player2: Player { get set }
 	var player1Score: Int { get }
