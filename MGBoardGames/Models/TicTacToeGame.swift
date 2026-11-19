@@ -133,7 +133,8 @@ struct TicTacToeBoard: Board {
 	let name = "Tic-Tac-Toe"
 	var board: TicTacToeBoard
 	var activePlayer: Player
-	var activeColor: E.Enum { color(for: activePlayer) }
+	var activePiece: E.Enum { activeColor == .black ? whitePiece : blackPiece }
+	var activeColor: PlayerColor { activePlayer.colour }
 	var isDraw: Bool = false
 	
 	var player1: Player {
@@ -215,11 +216,11 @@ struct TicTacToeBoard: Board {
 	}
 	
 	func score(for player: Player) -> Int {
-		board.score(color(for: player))
+		board.score(player.colour == .black ? whitePiece : blackPiece)
 	}
 	
-	func color(for player: Player) -> E.Enum {
-		player.colour == .black ? TicTacToePieces.blackPiece : .whitePiece
+	func color(for player: Player) -> PlayerColor {
+		player.colour
 	}
 	
 	func validMoves(for player: Player) -> [Position] {
@@ -259,10 +260,10 @@ struct TicTacToeBoard: Board {
 			
 			// clone the current board
 			var testBoard = board
-			testBoard.move(to: nextMove, for: activeColor)
+			testBoard.move(to: nextMove, for: activePiece)
 			
 			// compute the score (i.e., difference between white and black pieces
-			let scoreForMove = testBoard.score(activeColor)
+			let scoreForMove = testBoard.score(activePiece)
 			if scoreForMove > bestScore || bestScore == Int.min {
 				bestScore = scoreForMove
 				bestMove = nextMove
@@ -270,7 +271,7 @@ struct TicTacToeBoard: Board {
 		}
 		
 		if bestMove != Empty {
-			board.move(to: bestMove, for: activeColor)
+			board.move(to: bestMove, for: activePiece)
 			switchTurns()
 		}
 	}
@@ -337,7 +338,7 @@ struct TicTacToeBoard: Board {
 	
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
-			board.move(to: selected, for: color(for: activePlayer))
+			board.move(to: selected, for: activePiece)
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")

@@ -19,7 +19,7 @@ enum ChessPieces: Int, GamePieceEnum  {
 	
 	var description: String {
 		switch self {
-			case .invalid: "🚫"
+			case .invalid: "circle.slash"
 			case .wKing:   "whiteKing"
 			case .wQueen:  "whiteQueen"
 			case .wBishop: "whiteBishop"
@@ -122,6 +122,7 @@ struct ChessBoard: Board {
 	var board: ChessBoard
 	var activePlayer: Player
 	var activeColor: PlayerColor { activePlayer.colour }
+	var activePiece: E.Enum = .invalid   // nothing active yet
 	var isDraw: Bool = false
 	
 	var player1: Player {
@@ -143,6 +144,9 @@ struct ChessBoard: Board {
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
+	
+	var whitePiece: ChessPieces { E.wPawn }
+	var blackPiece: ChessPieces { E.bPawn }
 	
 	var gameIsOver: Bool {
 		(!canPlayerMakeMove(player1) && !canPlayerMakeMove(player2)) ||
@@ -212,7 +216,7 @@ struct ChessBoard: Board {
 			
 			// clone the current board
 			var testBoard = board
-			testBoard.move(to: nextMove, for: activeColor)
+			testBoard.move(to: nextMove, for: activePiece)
 			
 			// compute the score (i.e., difference between white and black pieces
 			let scoreForMove = testBoard.score(activeColor)
@@ -223,7 +227,7 @@ struct ChessBoard: Board {
 		}
 		
 		if bestMove != Empty {
-			board.move(to: bestMove, for: activeColor)
+			board.move(to: bestMove, for: activePiece)
 			switchTurns()
 		}
 	}
@@ -237,7 +241,6 @@ struct ChessBoard: Board {
 		guard board[selected] == .blank else { return false }
 		
 		// check moves in each direction
-		let playerColor = color(for: player)
 		return false
 	}
 
@@ -313,7 +316,7 @@ struct ChessBoard: Board {
     
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
-			board.move(to: selected, for: color(for: activePlayer))
+			board.move(to: selected, for: activePiece)
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")

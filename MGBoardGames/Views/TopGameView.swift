@@ -103,7 +103,7 @@ struct TopGameView<BView: View>: View {
 	
 	@ViewBuilder
 	func scorePiece (player: Player, fontSize: CGFloat) -> some View {
-		let piece = game.color(for: player)
+		let piece = player.colour == .white ? game.whitePiece : game.blackPiece
 		let score = game.score(for: player)
 		let shadow = Color.black
 		let color = player.colour == .black ? Color.white : .black

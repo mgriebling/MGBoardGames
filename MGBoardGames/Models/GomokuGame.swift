@@ -133,7 +133,8 @@ struct GomokuBoard: Board {
 	let name = "Gomoku"
 	var board: GomokuBoard
 	var activePlayer: Player
-	var activeColor: E.Enum { color(for: activePlayer) }
+	var activePiece: E.Enum { activeColor == .white ? whitePiece : blackPiece }
+	var activeColor: PlayerColor{ activePlayer.colour }
 	var isDraw: Bool = false
 	
 	var player1: Player {
@@ -206,12 +207,12 @@ struct GomokuBoard: Board {
 		setupInitialPieces()
 	}
 	
-	func color(for player: Player) -> E.Enum {
-		player.colour == .black ? GomokuPieces.blackPiece : .whitePiece
+	func color(for player: Player) -> PlayerColor {
+		player.colour
 	}
 	
 	func score(for player: Player) -> Int {
-		board.score(color(for: player))
+		board.score(player.colour == .white ? whitePiece : blackPiece)
 	}
 	
 	func validMoves(for player: Player) -> [Position] {
@@ -251,10 +252,10 @@ struct GomokuBoard: Board {
 			
 			// clone the current board
 			var testBoard = board
-			testBoard.move(to: nextMove, for: activeColor)
+			testBoard.move(to: nextMove, for: activePiece)
 			
 			// compute the score (i.e., difference between white and black pieces
-			let scoreForMove = testBoard.score(activeColor)
+			let scoreForMove = testBoard.score(activePiece)
 			if scoreForMove > bestScore || bestScore == Int.min {
 				bestScore = scoreForMove
 				bestMove = nextMove
@@ -262,7 +263,7 @@ struct GomokuBoard: Board {
 		}
 		
 		if bestMove != Empty {
-			board.move(to: bestMove, for: activeColor)
+			board.move(to: bestMove, for: activePiece)
 			switchTurns()
 		}
 	}
@@ -337,7 +338,7 @@ struct GomokuBoard: Board {
 	
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
-			board.move(to: selected, for: color(for: activePlayer))
+			board.move(to: selected, for: activePiece)
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")

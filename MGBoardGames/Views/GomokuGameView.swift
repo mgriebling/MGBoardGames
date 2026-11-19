@@ -78,7 +78,7 @@ struct GomokuGameView: View {
 			if piece == GomokuPieces.empty {
 				if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
 					Image(systemName: "checkmark.circle")
-						.foregroundColor(game.activeColor == .whitePiece ? Color.white : .black)
+						.foregroundColor(game.activePiece == .whitePiece ? Color.white : .black)
 						.opacity(0.5)
 				} else {
 					Text(piece.description)

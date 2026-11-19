@@ -13,18 +13,23 @@ protocol Game: AnyObject {
 
 	var name: String { get }
 	var activePlayer: Player { get }
+	var activeColor: PlayerColor { get }
+	var activePiece: E.Enum { get }
 	var player1: Player { get set }
 	var player2: Player { get set }
 	var player1Score: Int { get }
 	var player2Score: Int { get }
-	var activeColor: E.Enum { get }
+	
+	var whitePiece: E.Enum { get }
+	var blackPiece: E.Enum { get }
+
 	var gameIsOver: Bool { get }
 	var isDraw: Bool { get }
 	var rows: Int { get }
 	var columns: Int { get }
 	
 	init(rows: Int, columns: Int)
-	func color(for player: Player) -> E.Enum
+	func color(for player: Player) -> PlayerColor
 	func set(player1: Player, player2: Player)
 	func score(for player: Player) -> Int
 	func canPlayerMakeMove(_ player: Player) -> Bool
