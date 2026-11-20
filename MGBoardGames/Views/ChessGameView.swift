@@ -34,7 +34,9 @@ struct ChessGameView: View {
 						.foregroundColor(game.activePlayer.colour == .white ? Color.white : .black)
 						.opacity(0.5)
 				} else {
-					Image(systemName: piece.description)
+					Image(piece.image)
+						.resizable()
+						.aspectRatio(contentMode: .fit)
 				}
 			} else {
 				Image(piece.image)

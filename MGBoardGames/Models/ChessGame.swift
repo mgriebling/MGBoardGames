@@ -5,7 +5,6 @@
 //  Created by Mike Griebling on 2021-09-10.
 //
 
-import Foundation
 import SwiftUI
 
 enum ChessPieces: Int, GamePieceEnum  {
@@ -19,7 +18,7 @@ enum ChessPieces: Int, GamePieceEnum  {
 	
 	var description: String {
 		switch self {
-			case .invalid: "circle.slash"
+			case .invalid: "circleSlash"
 			case .wKing:   "whiteKing"
 			case .wQueen:  "whiteQueen"
 			case .wBishop: "whiteBishop"
@@ -50,7 +49,8 @@ enum ChessPieces: Int, GamePieceEnum  {
 			case .bKnight: .blackKnight
 			case .bRook:   .blackRook
 			case .bPawn:   .blackPawn
-			default:       .blackPawn
+			case .invalid: .circleSlash
+			default:       .blank
 		}
 	}
 	
@@ -264,9 +264,9 @@ struct ChessBoard: Board {
 		
 		// check moves in each direction
 		let piece = self[selectedPiece]
-		for moves in moves[piece] {
-			
-		}
+//		for moves in moves[piece] {
+//			
+//		}
 	
 		return false
 	}

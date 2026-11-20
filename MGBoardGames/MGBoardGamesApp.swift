@@ -51,6 +51,8 @@ struct ItemDetailView: View {
 	@State var gomoku = GomokuGame()
 	@State var reversi = ReversiGame()
 	@State var tictactoe = TicTacToeGame()
+	@State var chess = ChessGame()
+	@State var checkers = CheckerGame()
 	
 	var body: some View {
 		Group {
@@ -63,6 +65,12 @@ struct ItemDetailView: View {
 				}
 				case .gomoku: TopGameView(game: gomoku) { showMoves, width in
 					GomokuGameView(game: gomoku, boardWidth: width, showMoves: showMoves)
+				}
+				case .chess: TopGameView(game: chess) { showMoves, _ in
+					ChessGameView(game: chess, showMoves: showMoves)
+				}
+				case .checkers: TopGameView(game: checkers) { showMoves, _ in
+					CheckerGameView(game: checkers, showMoves: showMoves)
 				}
 				default:
 					VStack(spacing: 20) {
