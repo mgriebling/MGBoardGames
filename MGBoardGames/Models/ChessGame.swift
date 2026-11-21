@@ -7,33 +7,30 @@
 
 import SwiftUI
 
-enum ChessPieces: Int, GamePieceEnum  {
-	case blank = 0, invalid
-	case wKing, wQueen, wBishop, wKnight, wRook, wPawn
-	case bKing, bQueen, bBishop, bKnight, bRook, bPawn
+enum ChessPieces: GamePieceEnum {
+	static let boardSize = 8   // this should probably not be hardcoded here
 	
-	var isWhite: Bool { rawValue >= Self.wKing.rawValue && rawValue <= Self.wPawn.rawValue }
-	var isBlack: Bool { rawValue >= Self.bKing.rawValue && rawValue <= Self.bPawn.rawValue }
-	var isEmpty: Bool { self == .blank }
+	case blank, invalid
+	case king(PlayerColor), queen(PlayerColor), bishop(PlayerColor)
+	case knight(PlayerColor), rook(PlayerColor), pawn(PlayerColor)
 	
-	var description: String {
+	var color: PlayerColor? {
 		switch self {
-			case .invalid: "circleSlash"
-			case .wKing:   "whiteKing"
-			case .wQueen:  "whiteQueen"
-			case .wBishop: "whiteBishop"
-			case .wKnight: "whiteKnight"
-			case .wRook:   "whiteRook"
-			case .wPawn:   "whitePawn"
-			case .bKing:   "blackKing"
-			case .bQueen:  "blackQueen"
-			case .bBishop: "blackBishop"
-			case .bKnight: "blackKnight"
-			case .bRook:   "blackRook"
-			case .bPawn:   "blackPawn"
-			default:       ""
+		case let .queen(color),
+			 let .king(color),
+			 let .bishop(color),
+			 let .knight(color),
+			 let .rook(color),
+			 let .pawn(color):
+			return color
+		default:
+			return nil
 		}
 	}
+
+	var isWhite: Bool { color == .white }
+	var isBlack: Bool { color == .black }
+	var isEmpty: Bool { self == .blank }
 	
 	var image: ImageResource {
 		switch self {
@@ -54,10 +51,107 @@ enum ChessPieces: Int, GamePieceEnum  {
 		}
 	}
 	
+	private func generateMoves(for moveGenerator: (Int) -> ([NavigationFunction]), distance: Int) -> [NavigationFunction] {
+		var moves = [NavigationFunction]()
+		for d in 1...distance {
+			moves.append(contentsOf: moveGenerator(d))
+		}
+		return moves
+	}
+	
+	private func allMoves(d: Int) -> [NavigationFunction] {
+		orthogonalMoves(d: d) + diagonalMoves(d: d)
+	}
+	
+	private func orthogonalMoves(d: Int) -> [NavigationFunction] {
+		[
+			{ pos in pos.col += d },               // move right
+			{ pos in pos.col -= d },               // move left
+			{ pos in pos.row -= d },               // move up
+			{ pos in pos.row += d },               // move down
+		]
+	}
+	
+	private func diagonalMoves(d: Int) -> [NavigationFunction] {
+		[
+			{ pos in pos.row += d; pos.col += d }, // move right up
+			{ pos in pos.row -= d; pos.col += d }, // move right down
+			{ pos in pos.row += d; pos.col -= d }, // move left up
+			{ pos in pos.row -= d; pos.col -= d }  // move left down
+		]
+	}
+	
+	private func knightMoves() -> [NavigationFunction] {
+		[
+			{ pos in pos.row += 2; pos.col += 1 }, // up 2, right 1
+			{ pos in pos.row += 2; pos.col -= 1 }, // up 2, left 1
+			{ pos in pos.row -= 2; pos.col += 1 }, // down 2, right 1
+			{ pos in pos.row -= 2; pos.col -= 1 }, // down 2, left 1
+			{ pos in pos.row -= 1; pos.col += 2 }, // right 2, down 1
+			{ pos in pos.row += 1; pos.col += 2 }, // right 2, up 1
+			{ pos in pos.row -= 1; pos.col -= 2 }, // left 2, down 1
+			{ pos in pos.row += 1; pos.col -= 2 }, // left 2, up 1
+		]
+	}
+	
+	private func pawnMoves(_ color: PlayerColor) -> [NavigationFunction] {
+		// assumes white is on the bottom of the board
+		if color == .white {
+			[
+				{ pos in pos.row -= 1; pos.col += 1 }, // move up/right
+				{ pos in pos.row -= 1; pos.col -= 1 }, // move up/left
+				{ pos in pos.row -= 1 },               // move up 1 row
+				{ pos in pos.row -= 2 },               // move up 2 rows
+			]
+		} else {
+			[
+				{ pos in pos.row += 1; pos.col += 1 }, // move down/right
+				{ pos in pos.row += 1; pos.col -= 1 }, // move down/left
+				{ pos in pos.row += 1 },               // move down 1 row
+				{ pos in pos.row += 2 },               // move down 2 rows
+			]
+		}
+	}
+	
+	var moves: [NavigationFunction] {
+		let maxMoves = Self.boardSize
+		switch self {
+			case .king:
+				return allMoves(d: 1)
+			case .queen:
+				return generateMoves(for: allMoves, distance: maxMoves)
+			case .bishop:
+				return generateMoves(for: diagonalMoves, distance: maxMoves)
+			case .rook:
+				return generateMoves(for: orthogonalMoves, distance: maxMoves)
+			case .knight:
+				return knightMoves()
+			case .pawn(let color):
+				return pawnMoves(color)
+			default:
+				return [NavigationFunction]()
+		}
+	}
+	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .bRook }
-	static func flip(_ x: ChessPieces) -> ChessPieces { x }
+	static var start: PlayerColor { .black }
+	
+	// piece name aliases
+	static var wKing: Self { .king(.white) }
+	static var wQueen: Self { .queen(.white) }
+	static var wBishop: Self { .bishop(.white) }
+	static var wKnight: Self { .knight(.white) }
+	static var wRook: Self { .rook(.white) }
+	static var wCastle: Self { .rook(.white) }
+	static var wPawn: Self { .pawn(.white) }
+	static var bKing: Self { .king(.black) }
+	static var bQueen: Self { .queen(.black) }
+	static var bBishop: Self { .bishop(.black) }
+	static var bKnight: Self { .knight(.black) }
+	static var bRook: Self { .rook(.black) }
+	static var bCastle: Self { .rook(.black) }
+	static var bPawn: Self { .pawn(.black) }
 }
 
 struct ChessBoard: Board {
@@ -152,26 +246,9 @@ struct ChessBoard: Board {
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
 	
-	var whitePiece: ChessPieces { E.wPawn }
-	var blackPiece: ChessPieces { E.bPawn }
-	
 	var gameIsOver: Bool {
 		false
 	}
-	
-	let moves: [ChessPieces : [NavigationFunction]] = {
-		[.wPawn:
-			[
-				{ pos in pos.row -= 1 }, // move up 1 square
-				{ pos in pos.row -= 2 }, // move up 2 squares
-			],
-		 .bPawn:
-			 [
-				 { pos in pos.row += 1 }, // move down 1 square
-				 { pos in pos.row += 2 }, // move down 2 squares
-			 ],
-		]
-	}()
 	
 	/// Convenience getters
 	var rows: Int    { board.rows }
@@ -260,10 +337,10 @@ struct ChessBoard: Board {
 	}
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard let selectedPiece else { return false }
+		guard let _ = selectedPiece else { return false }
 		
 		// check moves in each direction
-		let piece = self[selectedPiece]
+//		let piece = self[selectedPiece]
 //		for moves in moves[piece] {
 //			
 //		}
@@ -272,32 +349,32 @@ struct ChessBoard: Board {
 	}
 
 	func setupInitialPieces() {
-		board.move(to: Position(row: 0, col: 0), for: .bRook)
-		board.move(to: Position(row: 0, col: 1), for: .bKnight)
-		board.move(to: Position(row: 0, col: 2), for: .bBishop)
-		board.move(to: Position(row: 0, col: 3), for: .bKing)
-		board.move(to: Position(row: 0, col: 4), for: .bQueen)
-		board.move(to: Position(row: 0, col: 5), for: .bBishop)
-		board.move(to: Position(row: 0, col: 6), for: .bKnight)
-		board.move(to: Position(row: 0, col: 7), for: .bRook)
-		board.move(to: Position(row: 7, col: 0), for: .wRook)
-		board.move(to: Position(row: 7, col: 1), for: .wKnight)
-		board.move(to: Position(row: 7, col: 2), for: .wBishop)
-		board.move(to: Position(row: 7, col: 3), for: .wKing)
-		board.move(to: Position(row: 7, col: 4), for: .wQueen)
-		board.move(to: Position(row: 7, col: 5), for: .wBishop)
-		board.move(to: Position(row: 7, col: 6), for: .wKnight)
-		board.move(to: Position(row: 7, col: 7), for: .wRook)
+		self[Position(row: 0, col: 0)] = .bRook
+		self[Position(row: 0, col: 1)] = .bKnight
+		self[Position(row: 0, col: 2)] = .bBishop
+		self[Position(row: 0, col: 3)] = .bKing
+		self[Position(row: 0, col: 4)] = .bQueen
+		self[Position(row: 0, col: 5)] = .bBishop
+		self[Position(row: 0, col: 6)] = .bKnight
+		self[Position(row: 0, col: 7)] = .bRook
+		self[Position(row: 7, col: 0)] = .wRook
+		self[Position(row: 7, col: 1)] = .wKnight
+		self[Position(row: 7, col: 2)] = .wBishop
+		self[Position(row: 7, col: 3)] = .wKing
+		self[Position(row: 7, col: 4)] = .wQueen
+		self[Position(row: 7, col: 5)] = .wBishop
+		self[Position(row: 7, col: 6)] = .wKnight
+		self[Position(row: 7, col: 7)] = .wRook
 		for i in 0...7 {
-			board.move(to: Position(row: 1, col: i), for: .bPawn)
-			board.move(to: Position(row: 6, col: i), for: .wPawn)
+			self[Position(row: 1, col: i)] = .bPawn
+			self[Position(row: 6, col: i)] = .wPawn
 		}
 	}
 	
-	func canPlayerMakeMove(_ state: Player) -> Bool {
+	func canPlayerMakeMove(_ player: Player) -> Bool {
 		for row in 0..<rows {
 			for column in 0..<columns {
-				if isValidMove(to: Position(row: row, col: column), for: state) { return true }
+				if isValidMove(to: Position(row: row, col: column), for: player) { return true }
 			}
 		}
 		return false
@@ -309,11 +386,11 @@ struct ChessBoard: Board {
 			// mark selectedPiece position on the board
 			self.selectedPiece = selected
 			return
-		} else if let selectedPiece, selected == selectedPiece {
+		} else if let _ = selectedPiece, selected == selectedPiece {
 			// undo the selection
 			self.selectedPiece = nil
 			return
-		} else if let selectedPiece, board[selected] != .empty {
+		} else if let _ = selectedPiece, board[selected] != .empty {
 			// pick another piece
 			self.selectedPiece = selected
 			return
@@ -323,10 +400,11 @@ struct ChessBoard: Board {
 		} else {
 			// invalid move
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

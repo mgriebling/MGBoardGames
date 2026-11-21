@@ -34,7 +34,7 @@ enum Kind: Int, CaseIterable, Identifiable, Codable {
 }
 
 enum PlayerColor: String, Codable, CaseIterable, Identifiable {
-	case black = "Black Piece", white = "White Piece"
+	case black = "black", white = "white"
 	
 	var id: String { self.rawValue }
 	

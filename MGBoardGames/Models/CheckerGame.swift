@@ -7,41 +7,39 @@
 
 import SwiftUI
 
-enum CheckerPieces: Int, GamePieceEnum  {
-	case blank = 0, invalid
-	case white, whiteKing
-	case black, blackKing
+enum CheckerPieces: GamePieceEnum {
+	case blank, invalid
+	case checker(PlayerColor)
+	case king(PlayerColor)
 	
-	var isWhite: Bool { self == .white || self == .whiteKing }
-	var isBlack: Bool { self == .black || self == .blackKing }
-	var isEmpty: Bool { self == .blank }
-	
-	var description: String {
+	var color: PlayerColor? {
 		switch self {
-			case .invalid: 	 "circleSlash"
-			case .whiteKing: "whiteKing"
-			case .white: 	 "whiteChecker"
-			case .blackKing: "blackKing"
-			case .black: 	 "blackChecker"
-			default:         ""
+			case .checker(let color),
+				 .king(let color):
+			return color
+		default:
+			return nil
 		}
 	}
 	
+	var isWhite: Bool { color == .white }
+	var isBlack: Bool { color == .black }
+	var isEmpty: Bool { self == Self.blank }
+	
 	var image: ImageResource {
 		switch self {
-			case .whiteKing: .whiteCheckerKing
-			case .white:	 .whiteChecker
-			case .blackKing: .blackCheckerKing
-			case .black:	 .blackChecker
-			case .invalid: 	 .circleSlash
-			default:         .blank
+			case .king(.white):    .whiteCheckerKing
+			case .king(.black):    .blackCheckerKing
+			case .checker(.black): .blackChecker
+			case .checker(.white): .whiteChecker
+			case .invalid: 	 	   .circleSlash
+			default:         	   .blank
 		}
 	}
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .black }
-	static func flip(_ x: CheckerPieces) -> CheckerPieces { x }
+	static var start: PlayerColor { .black }
 }
 
 struct CheckerBoard: Board {
@@ -136,8 +134,8 @@ struct CheckerBoard: Board {
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
 	
-	var whitePiece: CheckerPieces { E.white }
-	var blackPiece: CheckerPieces { E.black }
+//	var whitePiece: CheckerPieces { E.white }
+//	var blackPiece: CheckerPieces { E.black }
 	
 	var gameIsOver: Bool {
 		false
@@ -232,10 +230,10 @@ struct CheckerBoard: Board {
 	}
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard let selectedPiece else { return false }
+//		guard let selectedPiece else { return false }
 		
 		// check moves in each direction
-		let piece = self[selectedPiece]
+//		let piece = self[selectedPiece]
 //		for moves in moves[piece] {
 //			
 //		}
@@ -246,13 +244,13 @@ struct CheckerBoard: Board {
 	func setupInitialPieces() {
 		for i in 0...7 {
 			if i.isMultiple(of: 2) {
-				board.move(to: Position(row: 1, col: i), for: .black)
-				board.move(to: Position(row: 5, col: i), for: .white)
-				board.move(to: Position(row: 7, col: i), for: .white)
+				board.move(to: Position(row: 1, col: i), for: .checker(.black))
+				board.move(to: Position(row: 5, col: i), for: .checker(.white))
+				board.move(to: Position(row: 7, col: i), for: .checker(.white))
 			} else {
-				board.move(to: Position(row: 0, col: i), for: .black)
-				board.move(to: Position(row: 2, col: i), for: .black)
-				board.move(to: Position(row: 6, col: i), for: .white)
+				board.move(to: Position(row: 0, col: i), for: .checker(.black))
+				board.move(to: Position(row: 2, col: i), for: .checker(.black))
+				board.move(to: Position(row: 6, col: i), for: .checker(.white))
 			}
 		}
 	}
@@ -272,11 +270,11 @@ struct CheckerBoard: Board {
 			// mark selectedPiece position on the board
 			self.selectedPiece = selected
 			return
-		} else if let selectedPiece, selected == selectedPiece {
+		} else if let _ = selectedPiece, selected == selectedPiece {
 			// undo the selection
 			self.selectedPiece = nil
 			return
-		} else if let selectedPiece, board[selected] != .empty {
+		} else if let _ = selectedPiece, board[selected] != .empty {
 			// pick another piece
 			self.selectedPiece = selected
 			return
@@ -286,10 +284,11 @@ struct CheckerBoard: Board {
 		} else {
 			// invalid move
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

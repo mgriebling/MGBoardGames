@@ -7,30 +7,33 @@
 
 import Foundation
 
-enum ReversiPieces: Int, GamePieceEnum  {
-	case blackPiece = 0, whitePiece, blank, invalid
+enum ReversiPieces: GamePieceEnum  {
+	case blank, invalid
+	case piece(PlayerColor)
 	
-	var isWhite: Bool { self == .whitePiece }
-	var isBlack: Bool { self == .blackPiece }
+	var isWhite: Bool { self == .piece(.white) }
+	var isBlack: Bool { self == .piece(.black) }
 	var isEmpty: Bool { self == .blank }
 	
 	var description: String {
 		switch self {
 			case .invalid:	  "🚫"
-			case .blackPiece: "⚫️"
-			case .whitePiece: "⚪️"
+			case .piece(.black): "⚫️"
+			case .piece(.white): "⚪️"
 			default:          ""
 		}
 	}
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .blackPiece }
-	
+	static var start: PlayerColor { .black }
+}
+
+extension ReversiPieces {
 	static func flip(_ x: ReversiPieces) -> ReversiPieces {
 		switch x {
-			case .blackPiece: .whitePiece
-			case .whitePiece: .blackPiece
+			case .piece(.black): .piece(.white)
+			case .piece(.white): .piece(.black)
 			default: x
 		}
 	}
@@ -173,8 +176,8 @@ struct ReversiBoard: Board {
 	}
 	
 	let errorPiece = ReversiPieces.invalid
-	let whitePiece = ReversiPieces.whitePiece
-	let blackPiece = ReversiPieces.blackPiece
+	let whitePiece = ReversiPieces.piece(.white)
+	let blackPiece = ReversiPieces.piece(.black)
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
@@ -305,10 +308,11 @@ struct ReversiBoard: Board {
 			saveGame() // all is ok
 		} else {
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

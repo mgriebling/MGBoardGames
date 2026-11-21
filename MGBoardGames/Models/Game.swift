@@ -20,8 +20,8 @@ protocol Game: AnyObject {
 	var player1Score: Int { get }
 	var player2Score: Int { get }
 	
-	var whitePiece: E.Enum { get }
-	var blackPiece: E.Enum { get }
+//	var whitePiece: E.Enum { get }
+//	var blackPiece: E.Enum { get }
 
 	var gameIsOver: Bool { get }
 	var isDraw: Bool { get }

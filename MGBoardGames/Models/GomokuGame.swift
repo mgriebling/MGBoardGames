@@ -7,27 +7,28 @@
 
 import Foundation
 
-enum GomokuPieces: Int, GamePieceEnum  {
-	case blackPiece = 0, whitePiece, blank, invalid
+enum GomokuPieces: GamePieceEnum {
+	case blank, invalid
+	case piece(PlayerColor)
 	
 	var description: String {
 		switch self {
 			case .invalid:	  "🚫"
-			case .blackPiece: "⚫️"
-			case .whitePiece: "⚪️"
+			case .piece(.black): "⚫️"
+			case .piece(.white): "⚪️"
 			default:          ""
 		}
 	}
 	
-	var isWhite: Bool { self == .whitePiece }
-	var isBlack: Bool { self == .blackPiece }
+	var isWhite: Bool { self == .piece(.white) }
+	var isBlack: Bool { self == .piece(.black) }
 	var isEmpty: Bool { self == .blank }
 	
-	var other: Self { self.isBlack ? .whitePiece : .blackPiece }
+	var other: Self { self.isBlack ? .piece(.white) : .piece(.black) }
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .blackPiece }
+	static var start: PlayerColor { .black }
 }
 
 struct GomokuBoard: Board {
@@ -37,7 +38,7 @@ struct GomokuBoard: Board {
 	let columns: Int
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E.Enum]()
 	
 	/// Count of all pieces on the board
 	var count: Int { pieces.count { !$0.isEmpty } }
@@ -78,7 +79,7 @@ struct GomokuBoard: Board {
 	]
 	
 	// Determine a heuristic score
-	func score(_ player: E) -> Int {
+	func score(_ player: E.Enum) -> Int {
 		// https://kartikkukreja.wordpress.com/2013/03/30/heuristic-function-for-tic-tac-toe/
 		var score = 0
 		let opponent = player.other
@@ -100,7 +101,7 @@ struct GomokuBoard: Board {
 		return score
 	}
 	
-	mutating func set(positions: [Position], to piece: E) {
+	mutating func set(positions: [Position], to piece: E.Enum) {
 		positions.forEach { self[$0] = piece }
 	}
 	
@@ -108,7 +109,7 @@ struct GomokuBoard: Board {
 		pos.col + rows * pos.row
 	}
 	
-	subscript(position: Position) -> E {
+	subscript(position: Position) -> E.Enum {
 		get {
 			let index = index(from: position)
 			guard index >= 0 && index < pieces.count else { return E.blank }
@@ -133,7 +134,7 @@ struct GomokuBoard: Board {
 	let name = "Gomoku"
 	var board: GomokuBoard
 	var activePlayer: Player
-	var activePiece: E.Enum { activeColor == .white ? whitePiece : blackPiece }
+	var activePiece: E.Enum { activeColor == .white ? .piece(.white) : .piece(.black) }
 	var activeColor: PlayerColor{ activePlayer.colour }
 	var selectedPiece: Position? = nil
 	var isDraw: Bool = false
@@ -144,10 +145,6 @@ struct GomokuBoard: Board {
 	var player2: Player {
 		didSet { if player2.isStarting { activePlayer = player2 } }
 	}
-	
-	let errorPiece = E.invalid
-	let whitePiece = E.whitePiece
-	let blackPiece = E.blackPiece
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }
@@ -213,7 +210,7 @@ struct GomokuBoard: Board {
 	}
 	
 	func score(for player: Player) -> Int {
-		board.score(player.colour == .white ? whitePiece : blackPiece)
+		board.score(player.colour == .white ? .piece(.white) : .piece(.black))
 	}
 	
 	func validMoves(for player: Player) -> [Position] {
@@ -275,19 +272,19 @@ struct GomokuBoard: Board {
 	}
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard board[selected] == .blank else { return false }
+		guard board[selected] == .empty else { return false }
 		return true
 	}
 
 	func setupInitialPieces() {
 		// start with two pieces of one color and one of the opposite
 		let center = Position(row: rows/2, col: columns/2)
-		board[center.inc(col: 1)] = .blackPiece
-		board[center] = .whitePiece
-		board[center.inc(1)] = .blackPiece
+		board[center.inc(col: 1)] = .piece(.black)
+		board[center] = .piece(.white)
+		board[center.inc(1)] = .piece(.black)
 		
-		board[center.inc(3)] = .blackPiece
-		board[center.inc(col:2)] = .whitePiece
+		board[center.inc(3)] = .piece(.black)
+		board[center.inc(col:2)] = .piece(.white)
 	}
 	
 	func canPlayerMakeMove(_ state: Player) -> Bool {
@@ -305,10 +302,11 @@ struct GomokuBoard: Board {
 			saveGame() // all is ok
 		} else {
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

@@ -7,8 +7,8 @@
 
 import Foundation
 
-enum Connect4Pieces: Int, GamePieceEnum  {
-	case invalid = 0, blank
+enum Connect4Pieces: GamePieceEnum  {
+	case invalid, blank
 	case whitePiece, blackPiece
 	
 	var isWhite: Bool { self == .whitePiece }
@@ -26,8 +26,7 @@ enum Connect4Pieces: Int, GamePieceEnum  {
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .blackPiece }
-	static func flip(_ x: Connect4Pieces) -> Connect4Pieces { x }
+	static var start: PlayerColor { .black }
 }
 
 struct Connect4Board: Board {
@@ -241,10 +240,11 @@ struct Connect4Board: Board {
 			// invalid move
 			print("Invalid move...")
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

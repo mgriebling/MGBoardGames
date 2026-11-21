@@ -31,7 +31,7 @@ struct TicTacToeGameView: View {
 		Group {
 			if piece == TicTacToePieces.empty {
 				if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
-					let name = game.activePiece == .blackPiece ? "x.circle" : "o.circle"
+					let name = game.activePiece.isBlack ? "x.circle" : "o.circle"
 					Image(systemName: name)
 						.font(.system(size: size, weight: .heavy, design: .rounded))
 						.foregroundStyle(pieceColor)
@@ -43,7 +43,7 @@ struct TicTacToeGameView: View {
 					.foregroundStyle(pieceColor)
 			}
 		}
-		.scaleEffect(piece == .blackPiece ? 0.9 : 0.8)
+		.scaleEffect(piece.isBlack ? 0.9 : 0.8)
 		.shadow(color: .black.opacity(0.5), radius: 2, x:2, y:2)
 	}
 }

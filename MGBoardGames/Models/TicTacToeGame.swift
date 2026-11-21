@@ -7,27 +7,33 @@
 
 import Foundation
 
-enum TicTacToePieces: Int, GamePieceEnum  {
-	case blackPiece = 0, whitePiece, blank, invalid
+enum TicTacToePieces: GamePieceEnum, Equatable  {
+	case blank, invalid, piece(PlayerColor)
 	
 	var description: String {
 		switch self {
-			case .invalid:	  "circle.slash"
-			case .blackPiece: "xmark"
-			case .whitePiece: "circle"
-			default:          ""
+			case .invalid:	     "circle.slash"
+			case .piece(.black): "xmark"
+			case .piece(.white): "circle"
+			default:             ""
 		}
 	}
 	
-	var isWhite: Bool { self == .whitePiece }
-	var isBlack: Bool { self == .blackPiece }
+	var isWhite: Bool {
+		if case let .piece(color) = self { return color == .white }
+		return false
+	}
+	var isBlack: Bool {
+		if case let .piece(color) = self { return color == .black }
+		return false
+	}
 	var isEmpty: Bool { self == .blank }
 	
-	var other: Self { self.isBlack ? .whitePiece : .blackPiece }
+	var other: Self { self.isBlack ? .piece(.white) : .piece(.black) }
 	
 	static var error: Self { .invalid }
 	static var empty: Self { .blank }
-	static var start: Self { .blackPiece }
+	static var start: PlayerColor { .black }
 }
 
 struct TicTacToeBoard: Board {
@@ -146,8 +152,8 @@ struct TicTacToeBoard: Board {
 	}
 	
 	let errorPiece = TicTacToePieces.invalid
-	let whitePiece = TicTacToePieces.whitePiece
-	let blackPiece = TicTacToePieces.blackPiece
+	let whitePiece = TicTacToePieces.piece(.white)
+	let blackPiece = TicTacToePieces.piece(.black)
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }
@@ -297,10 +303,11 @@ struct TicTacToeBoard: Board {
 			saveGame() // all is ok
 		} else {
 			let pieceInPlace = board[selected]
+			let pieceIsBlank = pieceInPlace == .blank
 			board.move(to: selected, for: .invalid)
 			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 				// clear illegal move square after some time
-				if pieceInPlace == .blank {
+				if pieceIsBlank {
 					self.board.clear(selected)
 				} else {
 					self.board[selected] = pieceInPlace

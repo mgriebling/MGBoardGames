@@ -17,11 +17,11 @@ struct Position: Codable, Hashable, Equatable {
 	}
 }
 
-protocol GamePieceEnum : CustomStringConvertible, Codable, RawRepresentable {
-	associatedtype Enum: Codable, Equatable, CustomStringConvertible
+protocol GamePieceEnum : Codable, Equatable {
+	associatedtype Enum: Codable, Equatable
 	static var empty: Enum { get }
 	static var error: Enum { get }
-	static var start: Enum { get }
+	static var start: PlayerColor { get }
 	
 	var isWhite: Bool { get }
 	var isBlack: Bool { get }
