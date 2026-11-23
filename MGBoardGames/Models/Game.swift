@@ -28,7 +28,7 @@ protocol Game: AnyObject {
 	var rows: Int { get }
 	var columns: Int { get }
 	
-	init(rows: Int, columns: Int)
+	init()
 	func color(for player: Player) -> PlayerColor
 	func set(player1: Player, player2: Player)
 	func score(for player: Player) -> Int
@@ -44,7 +44,6 @@ protocol Game: AnyObject {
 }
 
 extension Game {
-	
 	func set(player1: Player, player2: Player) {
 		self.player1 = player1
 		self.player2 = player2

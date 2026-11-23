@@ -17,7 +17,7 @@ struct GomokuGameView: View {
 			Spacer(minLength: 0)
 			SquareBoardView(board: game.board, lightColor: .clear,
 							darkColor: .clear, boardColor: .clear,
-							lineColor: .clear, doTap: game.handleTap) { piece, position in
+							lineColor: .clear, doTap: game.handleTap) { piece, position, _ in
 				pieceView(piece: piece, position: position)
 			}
 			.background(GomokuView(width: boardWidth))

@@ -16,7 +16,7 @@ struct TicTacToeGameView: View {
 	var body: some View {
 		VStack {
 			Spacer(minLength: 0)
-			SquareBoardView(board: game.board, lightColor: Color.backColour, darkColor: Color.backColour, lineColor: .black, lineWidth: 5, doTap: game.handleTap) { piece, position in
+			SquareBoardView(board: game.board, lightColor: Color.backColour, darkColor: Color.backColour, lineColor: .black, lineWidth: 5, doTap: game.handleTap) { piece, position, _ in
 				pieceView(piece: piece, position: position)
 			}
 			.blur(radius: game.gameIsOver ? 3 : 0)

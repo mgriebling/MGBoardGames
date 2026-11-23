@@ -16,7 +16,7 @@ struct ChessGameView: View {
 	var body: some View {
 		VStack {
 			Spacer(minLength: 0)
-			SquareBoardView(board: game.board, doTap: game.handleTap) { piece, position in
+			SquareBoardView(board: game.board, doTap: game.handleTap) { piece, position, _ in
 				pieceView(piece: piece, position: position)
 			}
 			.blur(radius: game.gameIsOver ? 3 : 0)

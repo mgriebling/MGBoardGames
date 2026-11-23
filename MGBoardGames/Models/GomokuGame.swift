@@ -34,8 +34,9 @@ enum GomokuPieces: GamePieceEnum {
 struct GomokuBoard: Board {
 	typealias E = GomokuPieces
 	
-	let rows: Int
-	let columns: Int
+	let rows = 15
+	let columns = 15
+	let itemsInARow = 6
 	
 	/// Game board with rows x columns positions
 	private var pieces = [E.Enum]()
@@ -43,9 +44,7 @@ struct GomokuBoard: Board {
 	/// Count of all pieces on the board
 	var count: Int { pieces.count { !$0.isEmpty } }
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -55,7 +54,7 @@ struct GomokuBoard: Board {
 		pieces = Array(repeating: E.empty, count: rows * columns)
 	}
 	
-	// Placement of reversi pieces along with opponent flipping
+	// Placement of gomoku pieces
 	mutating func move(to position: Position, for activeColor: E.Enum) {
 		self[position] = activeColor
 	}
@@ -106,7 +105,7 @@ struct GomokuBoard: Board {
 	}
 	
 	private func index(from pos: Position) -> Int {
-		pos.col + rows * pos.row
+		pos.col + columns * pos.row
 	}
 	
 	subscript(position: Position) -> E.Enum {
@@ -123,7 +122,7 @@ struct GomokuBoard: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
+		case pieces
 		// excludes ThreeInARow and HeuristicScore
 	}
 }
@@ -139,6 +138,10 @@ struct GomokuBoard: Board {
 	var selectedPiece: Position? = nil
 	var isDraw: Bool = false
 	
+	
+	var rows: Int    { board.rows }
+	var columns: Int { board.columns }
+	
 	var player1: Player {
 		didSet { if player1.isStarting { activePlayer = player1 } }
 	}
@@ -148,6 +151,17 @@ struct GomokuBoard: Board {
 	
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player2) }
+	
+	
+	init() {
+		let player1 = Player(name: "Dummy1", colour: .white)
+		self.board = GomokuBoard()
+		self.player1 = player1
+		self.player2 = Player(name: "Dummy2", colour: .white)
+		self.activePlayer = player1
+		self.isDraw = false
+		setupInitialPieces()
+	}
 	
 	var gameIsOver: Bool {
 		let incRight: NavigationFunction = { pos in pos.col += 1 }
@@ -187,32 +201,6 @@ struct GomokuBoard: Board {
 		return true
 	}
 	
-	var rows: Int    { board.rows }
-	var columns: Int { board.columns }
-	
-	init(rows: Int = 15, columns: Int = 15) {
-		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = GomokuBoard(rows: rows, columns: columns)
-		self.player1 = player1
-		self.player2 = Player(name: "Dummy2", colour: .white)
-		self.activePlayer = player1
-		self.isDraw = false
-		setupInitialPieces()
-	}
-	
-	func newGame() {
-		self.board = GomokuBoard(rows: rows, columns: columns)
-		setupInitialPieces()
-	}
-	
-	func color(for player: Player) -> PlayerColor {
-		player.colour
-	}
-	
-	func score(for player: Player) -> Int {
-		board.score(player.colour == .white ? .piece(.white) : .piece(.black))
-	}
-	
 	func validMoves(for player: Player) -> [Position] {
 		var moves = [Position]()
 		for row in 0..<rows {
@@ -234,6 +222,19 @@ struct GomokuBoard: Board {
 		}
 		
 		if canPlayerMakeMove(nextPlayerTemp) { activePlayer = nextPlayerTemp }
+	}
+	
+	func newGame() {
+		self.board = GomokuBoard()
+		setupInitialPieces()
+	}
+	
+	func color(for player: Player) -> PlayerColor {
+		player.colour
+	}
+	
+	func score(for player: Player) -> Int {
+		board.score(player.colour == .white ? .piece(.white) : .piece(.black))
 	}
 	
 	/// Simple computer algorithm to decide on the next move.  Check one move ahead and see
@@ -332,7 +333,7 @@ struct GomokuBoard: Board {
 				return
 			}
 		}
-		self.board = GomokuBoard(rows: rows, columns: columns)
+		self.board = GomokuBoard()
 	}
 	
 	func setPiece(_ selected: Position) -> Bool {

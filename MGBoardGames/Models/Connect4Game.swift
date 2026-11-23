@@ -9,18 +9,18 @@ import Foundation
 
 enum Connect4Pieces: GamePieceEnum  {
 	case invalid, blank
-	case whitePiece, blackPiece
+	case piece(PlayerColor)
 	
-	var isWhite: Bool { self == .whitePiece }
-	var isBlack: Bool { self == .blackPiece }
+	var isWhite: Bool { self == .piece(.white) }
+	var isBlack: Bool { self == .piece(.black) }
 	var isEmpty: Bool { self == .blank }
 	
 	var description: String {
 		switch self {
-			case .invalid:	  "🚫"
-			case .blackPiece: "🔴"
-			case .whitePiece: "🟡"
-			default:          ""
+			case .invalid:	     "🚫"
+			case .piece(.black): "🔴"
+			case .piece(.white): "🟡"
+			default:             ""
 		}
 	}
 	
@@ -32,15 +32,20 @@ enum Connect4Pieces: GamePieceEnum  {
 struct Connect4Board: Board {
 	typealias E = Connect4Pieces
 	
-	let rows: Int
-	let columns: Int
+	let rows: Int = 6
+	let columns: Int = 7
+	let itemsInARow: Int = 4
+	
+	var winCount = 0
+	
+	private static let MAX_SCORE = 1_000_000_000_000
+	private static let SEMI_OPEN_SCORE = [0, 1, 100, 10_000, 1_000_000, 100_000_000]
+	private static let FULL_OPEN_SCORE = [0, 10, 1_000, 100_000, 10_000_000, 1_000_000_000]
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E]()
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -49,17 +54,149 @@ struct Connect4Board: Board {
 	mutating func clearAll() {
 		pieces = Array(repeating: E.empty, count: rows * columns)
 	}
-	
-	// Movement functions for Connect4s inspired by SHCConnect4s demo
-	let moves: [NavigationFunction] = [ ]
 
-	// Placement of Connect4s pieces along with opponent flipping
+	// Placement of Connect4 pieces
 	mutating func move(to position: Position, for activeColor: E.Enum) {
 		self[position] = activeColor
 	}
 	
-	func score(_ playerColor: PlayerColor) -> Int {
-		0 // pieces.count { $0 == playerColor }
+	func score(for playerColor: PlayerColor) -> Int {
+		var score = 0
+		
+		for x in 0..<columns {
+			// vertical
+			score += getScore(x, 0, 0, 1);
+			
+			// diagonal top side going down/right
+			score += getScore(x, 0, 1, 1);
+
+			// diagonal bottom side going up/right
+			score += getScore(x, rows-1, 1, -1);
+		}
+
+		for y in 0..<rows {
+			// horizontal
+			score += getScore(0, y, 1, 0)
+	
+			if y > 0 && y < rows-1 {
+				// diagonal left side going down/right
+				score += getScore(0, y, 1, 1)
+
+				// diagonal left side going up/right
+				score += getScore(0, y, 1, -1)
+			}
+		}
+		
+		return score
+	}
+	
+	private func getScore(_ x:Int, _ y:Int, _ deltaX:Int, _ deltaY:Int) -> Int {
+		var score = 0
+		var x = x
+		var y = y
+		
+		var leftOpen = false
+		var position : E
+		var lastPosition : E? = nil
+		var whiteCount = 0
+		var blackCount = 0
+		
+		while x >= 0 && x < columns && y >= 0 && y < rows {
+			position = self[Position(row: y, col: x)]
+			switch position {
+				case .piece(.black):
+					if let lastPosition, lastPosition == .piece(.white) {
+						leftOpen = false
+					} else if let lastPosition, lastPosition == E.blank {
+						leftOpen = true
+					}
+					score -= calculateScore(blackCount, leftOpen, false)
+					blackCount = 0
+					whiteCount += 1
+				case .piece(.white):
+					if let lastPosition, lastPosition == .piece(.black) {
+						leftOpen = false
+					} else if let lastPosition, lastPosition == E.blank {
+						leftOpen = true
+					}
+					score += calculateScore(whiteCount, leftOpen, false)
+					whiteCount = 0
+					blackCount += 1
+				case .blank:
+					score -= calculateScore(blackCount, leftOpen, true)
+					score += calculateScore(whiteCount, leftOpen, true)
+					whiteCount = 0
+					blackCount = 0
+				default: break
+			}
+			
+			x += deltaX
+			y += deltaY
+			
+			lastPosition = position
+		}
+		
+		score -= calculateScore(blackCount, leftOpen, false)
+		score += calculateScore(whiteCount, leftOpen, false)
+		
+		return score;
+	}
+	
+	private func calculateScore(_ count:Int, _ leftOpen:Bool, _ rightOpen:Bool) -> Int {
+		if count >= winCount {
+			return Self.MAX_SCORE
+		}
+		if !leftOpen && !rightOpen {
+			return 0
+		}
+		
+		if leftOpen && rightOpen {
+			return Self.FULL_OPEN_SCORE[count]
+		}
+		return Self.SEMI_OPEN_SCORE[count]
+	}
+	
+	func isFull() -> Bool {
+		pieces.count { $0 == .blank } == 0
+	}
+	
+	func squaresMatch(initialChip: E, pos: Position, move: NavigationFunction) -> Bool {
+		/// bail out early if we can't win from here
+		/// checks end pos for on-board coordinates
+		let endPos = pos.inc(move, times: itemsInARow-1)
+		if endPos.row < 0 || endPos.row >= rows { return false }
+		if endPos.col < 0 || endPos.col >= columns  { return false }
+		
+		/// now we need to check all positions in the *move* direction
+		var pos = pos  // mutatble
+		for _ in 1..<itemsInARow {
+			move(&pos)
+			if self[pos] != initialChip { return false }
+		}
+		return true
+	}
+	
+	private let moves: [NavigationFunction] = [
+		{pos in pos.col += 1 }, 			  // check to the right
+		{pos in pos.row += 1 },			 	  // check below
+		{pos in pos.row += 1; pos.col += 1 }, // diagonal down, right
+		{pos in pos.row -= 1; pos.col += 1 }  // diagonal up, right
+	]
+	
+	func isWin(for player: Player) -> Bool {
+		let chip = E.piece(player.colour)
+		
+		for row in 0..<rows {
+			for col in 0..<columns {
+				let pos = Position(row: row, col: col)
+				for move in moves {
+					if squaresMatch(initialChip: chip, pos: pos, move: move) {
+						return true
+					}
+				}
+			}
+		}
+		return false
 	}
 	
 	mutating func set(positions: [Position], to piece: E) {
@@ -84,8 +221,8 @@ struct Connect4Board: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
-		// moves
+		case pieces
+		// don't decode anything else
 	}
 	
 }
@@ -113,8 +250,8 @@ struct Connect4Board: Board {
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
 	
-	var whitePiece: Connect4Pieces { E.whitePiece }
-	var blackPiece: Connect4Pieces { E.blackPiece }
+	var whitePiece: Connect4Pieces { .piece(.white) }
+	var blackPiece: Connect4Pieces { .piece(.black) }
 	
 	var gameIsOver: Bool {
 		false
@@ -126,9 +263,9 @@ struct Connect4Board: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 6, columns: Int = 7) {
+	init() {
 		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = Connect4Board(rows: rows, columns: columns)
+		self.board = Connect4Board()
 		self.player1 = player1
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
@@ -136,11 +273,11 @@ struct Connect4Board: Board {
 	}
 	
 	func score(for player: Player) -> Int {
-		board.score(player.colour)
+		board.score(for: player.colour)
 	}
 	
 	func newGame() {
-		self.board = Connect4Board(rows: rows, columns: columns)
+		self.board = Connect4Board()
 		setupInitialPieces()
 	}
 	
@@ -190,7 +327,7 @@ struct Connect4Board: Board {
 			testBoard.move(to: nextMove, for: activePiece)
 			
 			// compute the score (i.e., difference between white and black pieces
-			let scoreForMove = testBoard.score(activeColor)
+			let scoreForMove = testBoard.score(for: activeColor)
 			if scoreForMove > bestScore || bestScore == Int.min {
 				bestScore = scoreForMove
 				bestMove = nextMove
@@ -223,7 +360,7 @@ struct Connect4Board: Board {
 	}
 
 	func setupInitialPieces() {
-		// board is cleared
+		// Board is initially clear
 	}
 	
 	func canPlayerMakeMove(_ state: Player) -> Bool {
@@ -234,7 +371,7 @@ struct Connect4Board: Board {
 		guard !gameIsOver else { return }
 		// determine the next row for this column
 		let row = countPieces(col: selected.col)
-		if setPiece(Position(row: row, col: selected.col)) {
+		if setPiece(Position(row: rows - 1 - row, col: selected.col)) {
 			saveGame() // all is ok
 		} else {
 			// invalid move
@@ -270,7 +407,7 @@ struct Connect4Board: Board {
                 return
             }
         }
-		self.board = Connect4Board(rows: rows, columns: columns)
+		self.board = Connect4Board()
     }
     
 	func setPiece(_ selected: Position) -> Bool {

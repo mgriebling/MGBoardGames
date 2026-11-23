@@ -12,7 +12,7 @@ enum ChessPieces: GamePieceEnum {
 	
 	case blank, invalid
 	case king(PlayerColor), queen(PlayerColor), bishop(PlayerColor)
-	case knight(PlayerColor), rook(PlayerColor), pawn(PlayerColor)
+	case knight(PlayerColor), rook(PlayerColor), pawn(PlayerColor, Bool)
 	
 	var color: PlayerColor? {
 		switch self {
@@ -20,8 +20,9 @@ enum ChessPieces: GamePieceEnum {
 			 let .king(color),
 			 let .bishop(color),
 			 let .knight(color),
-			 let .rook(color),
-			 let .pawn(color):
+			 let .rook(color):
+				return color
+		case let .pawn(color, _):
 			return color
 		default:
 			return nil
@@ -94,23 +95,17 @@ enum ChessPieces: GamePieceEnum {
 		]
 	}
 	
-	private func pawnMoves(_ color: PlayerColor) -> [NavigationFunction] {
+	private func pawnMoves(_ color: PlayerColor, _ first: Bool) -> [NavigationFunction] {
 		// assumes white is on the bottom of the board
-		if color == .white {
-			[
-				{ pos in pos.row -= 1; pos.col += 1 }, // move up/right
-				{ pos in pos.row -= 1; pos.col -= 1 }, // move up/left
-				{ pos in pos.row -= 1 },               // move up 1 row
-				{ pos in pos.row -= 2 },               // move up 2 rows
-			]
-		} else {
-			[
-				{ pos in pos.row += 1; pos.col += 1 }, // move down/right
-				{ pos in pos.row += 1; pos.col -= 1 }, // move down/left
-				{ pos in pos.row += 1 },               // move down 1 row
-				{ pos in pos.row += 2 },               // move down 2 rows
-			]
-		}
+		let d = color == .white ? 1 : -1
+		var moves: [NavigationFunction] = [
+			{ pos in pos.row -= d; pos.col += 1 }, // move vertically/right
+			{ pos in pos.row -= d; pos.col -= 1 }, // move vertically/left
+			{ pos in pos.row -= d },               // move vertically 1 row
+			{ pos in pos.row -= 2 * d },           // move vertically 2 rows
+		]
+		if !first { moves.removeLast() }		   // remove 2 row move
+		return moves
 	}
 	
 	var moves: [NavigationFunction] {
@@ -126,8 +121,8 @@ enum ChessPieces: GamePieceEnum {
 				return generateMoves(for: orthogonalMoves, distance: maxMoves)
 			case .knight:
 				return knightMoves()
-			case .pawn(let color):
-				return pawnMoves(color)
+			case .pawn(let color, let first):
+				return pawnMoves(color, first)
 			default:
 				return [NavigationFunction]()
 		}
@@ -144,28 +139,27 @@ enum ChessPieces: GamePieceEnum {
 	static var wKnight: Self { .knight(.white) }
 	static var wRook: Self { .rook(.white) }
 	static var wCastle: Self { .rook(.white) }
-	static var wPawn: Self { .pawn(.white) }
+	static var wPawn: Self { .pawn(.white, true) }
 	static var bKing: Self { .king(.black) }
 	static var bQueen: Self { .queen(.black) }
 	static var bBishop: Self { .bishop(.black) }
 	static var bKnight: Self { .knight(.black) }
 	static var bRook: Self { .rook(.black) }
 	static var bCastle: Self { .rook(.black) }
-	static var bPawn: Self { .pawn(.black) }
+	static var bPawn: Self { .pawn(.black, true) }
 }
 
 struct ChessBoard: Board {
 	typealias E = ChessPieces
 	
-	let rows: Int
-	let columns: Int
+	let rows = 8
+	let columns = 8
+	let itemsInARow = 0  // N/A
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E]()
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -174,18 +168,6 @@ struct ChessBoard: Board {
 	mutating func clearAll() {
 		pieces = Array(repeating: E.empty, count: rows * columns)
 	}
-	
-	// Movement functions for Chess inspired by SHCChess demo
-	let moves: [NavigationFunction] = [
-		{ pos in pos.col += 1 },             	// move right
-		{ pos in pos.col -= 1 },             	// move left
-		{ pos in pos.row -= 1 },                // move up
-		{ pos in pos.row += 1 },                // move down
-		{ pos in pos.row += 1; pos.col += 1 },  // move right up
-		{ pos in pos.row -= 1; pos.col += 1 },  // move right down
-		{ pos in pos.row += 1; pos.col -= 1 },  // move left up
-		{ pos in pos.row -= 1; pos.col -= 1 }   // move left down
-	]
 	
 	// Placement of Chess pieces along with opponent flipping
 	mutating func move(to position: Position, for activeColor: E.Enum) {
@@ -218,7 +200,7 @@ struct ChessBoard: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
+		case pieces
 		// moves
 	}
 	
@@ -254,9 +236,9 @@ struct ChessBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 8, columns: Int = 8) {
+	init() {
 		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = ChessBoard(rows: rows, columns: columns)
+		self.board = ChessBoard()
 		self.player1 = player1
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
@@ -268,7 +250,7 @@ struct ChessBoard: Board {
 	}
 	
 	func newGame() {
-		self.board = ChessBoard(rows: rows, columns: columns)
+		self.board = ChessBoard()
 		setupInitialPieces()
 	}
 	
@@ -337,14 +319,15 @@ struct ChessBoard: Board {
 	}
 	
 	func isValidMove(to selected: Position, for player: Player) -> Bool {
-		guard let _ = selectedPiece else { return false }
+		guard let selectedPiece else { return false }
 		
 		// check moves in each direction
-//		let piece = self[selectedPiece]
-//		for moves in moves[piece] {
-//			
-//		}
-	
+		let piece = self[selectedPiece]
+		var toLocation = selectedPiece
+		for move in piece.moves {
+			move(&toLocation)
+			if selected == toLocation { return true	}
+		}
 		return false
 	}
 
@@ -430,13 +413,16 @@ struct ChessBoard: Board {
                 return
             }
         }
-		self.board = ChessBoard(rows: rows, columns: columns)
+		self.board = ChessBoard()
     }
     
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
 			guard let selectedPiece else { return false }
-			let activePiece = self[selectedPiece]
+			var activePiece = self[selectedPiece]
+			if case let .pawn(color, first) = activePiece, first {
+				activePiece = .pawn(color, false)  // first move is used
+			}
 			self[selectedPiece] = .empty
 			self.selectedPiece = nil
 			board.move(to: selected, for: activePiece)

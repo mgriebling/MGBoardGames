@@ -19,14 +19,8 @@ enum TicTacToePieces: GamePieceEnum, Equatable  {
 		}
 	}
 	
-	var isWhite: Bool {
-		if case let .piece(color) = self { return color == .white }
-		return false
-	}
-	var isBlack: Bool {
-		if case let .piece(color) = self { return color == .black }
-		return false
-	}
+	var isWhite: Bool { self == .piece(.white) }
+	var isBlack: Bool { self == .piece(.black) }
 	var isEmpty: Bool { self == .blank }
 	
 	var other: Self { self.isBlack ? .piece(.white) : .piece(.black) }
@@ -39,18 +33,17 @@ enum TicTacToePieces: GamePieceEnum, Equatable  {
 struct TicTacToeBoard: Board {
 	typealias E = TicTacToePieces
 	
-	let rows: Int
-	let columns: Int
+	let rows = 3
+	let columns = 3
+	let itemsInARow = 3
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E]()
 	
 	/// Count of all pieces on the board
 	var count: Int { pieces.count { !$0.isEmpty } }
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -128,8 +121,8 @@ struct TicTacToeBoard: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
-		// excludes ThreeInARow and HeuristicScore
+		case pieces
+		// excludes everything else
 	}
 }
 
@@ -199,9 +192,9 @@ struct TicTacToeBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 3, columns: Int = 3) {
+	init() {
 		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = TicTacToeBoard(rows: rows, columns: columns)
+		self.board = TicTacToeBoard()
 		self.player1 = player1
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
@@ -210,7 +203,7 @@ struct TicTacToeBoard: Board {
 	}
 	
 	func newGame() {
-		self.board = TicTacToeBoard(rows: rows, columns: columns)
+		self.board = TicTacToeBoard()
 		setupInitialPieces()
 	}
 	
@@ -333,7 +326,7 @@ struct TicTacToeBoard: Board {
 				return
 			}
 		}
-		self.board = TicTacToeBoard(rows: rows, columns: columns)
+		self.board = TicTacToeBoard()
 	}
 	
 	func setPiece(_ selected: Position) -> Bool {

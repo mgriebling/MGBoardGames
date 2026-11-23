@@ -42,15 +42,14 @@ extension ReversiPieces {
 struct ReversiBoard: Board {
 	typealias E = ReversiPieces
 	
-	let rows: Int
-	let columns: Int
+	let rows = 8
+	let columns = 8
+	let itemsInARow = 0  // not applicable
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E]()
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -151,8 +150,8 @@ struct ReversiBoard: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
-		// moves
+		case pieces
+		// nothing else
 	}
 	
 }
@@ -191,9 +190,9 @@ struct ReversiBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 8, columns: Int = 8) {
+	init() {
 		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = ReversiBoard(rows: rows, columns: columns)
+		self.board = ReversiBoard()
 		self.player1 = player1
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
@@ -205,7 +204,7 @@ struct ReversiBoard: Board {
 	}
 	
 	func newGame() {
-		self.board = ReversiBoard(rows: rows, columns: columns)
+		self.board = ReversiBoard()
 		setupInitialPieces()
 	}
 	
@@ -338,7 +337,7 @@ struct ReversiBoard: Board {
                 return
             }
         }
-		self.board = ReversiBoard(rows: rows, columns: columns)
+		self.board = ReversiBoard()
     }
     
 	func setPiece(_ selected: Position) -> Bool {

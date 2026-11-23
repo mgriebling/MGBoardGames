@@ -15,6 +15,12 @@ struct Position: Codable, Hashable, Equatable {
 	func inc(_ row: Int = 0, col: Int = 0) -> Position {
 		Position(row: self.row + row, col: self.col + col)
 	}
+	
+	func inc(_ move: NavigationFunction, times n: Int = 1) -> Position {
+		var pos = self  			  // make this mutable
+		for _ in 1...n { move(&pos) } // move n times
+		return pos
+	}
 }
 
 protocol GamePieceEnum : Codable, Equatable {
@@ -35,8 +41,7 @@ protocol Board: Codable {
 	
 	var rows: Int { get }
 	var columns: Int { get }
-	
-	init(rows: Int, columns: Int)
+	var itemsInARow: Int { get }
 	
 	mutating func clear(_ position: Position)
 	mutating func set(positions: [Position], to piece: E.Enum)

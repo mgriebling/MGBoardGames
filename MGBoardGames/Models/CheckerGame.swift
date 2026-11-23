@@ -45,15 +45,14 @@ enum CheckerPieces: GamePieceEnum {
 struct CheckerBoard: Board {
 	typealias E = CheckerPieces
 	
-	let rows: Int
-	let columns: Int
+	let rows = 8
+	let columns = 8
+	let itemsInARow = 0  // N/A
 	
 	/// Game board with rows x columns positions
-	private var pieces: [E] = []
+	private var pieces = [E]()
 	
-	init(rows: Int, columns: Int) {
-		self.rows = rows
-		self.columns = columns
+	init() {
 		clearAll()
 	}
 	
@@ -63,17 +62,13 @@ struct CheckerBoard: Board {
 		pieces = Array(repeating: E.empty, count: rows * columns)
 	}
 	
-	// Movement functions for Checkers inspired by SHCCheckers demo
-	let moves: [NavigationFunction] = [
-		{ pos in pos.col += 1 },             	// move right
-		{ pos in pos.col -= 1 },             	// move left
-		{ pos in pos.row -= 1 },                // move up
-		{ pos in pos.row += 1 },                // move down
-		{ pos in pos.row += 1; pos.col += 1 },  // move right up
-		{ pos in pos.row -= 1; pos.col += 1 },  // move right down
-		{ pos in pos.row += 1; pos.col -= 1 },  // move left up
-		{ pos in pos.row -= 1; pos.col -= 1 }   // move left down
-	]
+//	// Movement functions for Checkers inspired by SHCCheckers demo
+//	let moves: [NavigationFunction] = [
+//		{ pos in pos.row += 1; pos.col += 1 },  // move right up
+//		{ pos in pos.row -= 1; pos.col += 1 },  // move right down
+//		{ pos in pos.row += 1; pos.col -= 1 },  // move left up
+//		{ pos in pos.row -= 1; pos.col -= 1 }   // move left down
+//	]
 	
 	// Placement of Checkers pieces along with opponent flipping
 	mutating func move(to position: Position, for activeColor: E.Enum) {
@@ -89,7 +84,7 @@ struct CheckerBoard: Board {
 	}
 	
 	private func index(from pos: Position) -> Int {
-		pos.col + rows * pos.row
+		pos.col + columns * pos.row
 	}
 	
 	subscript(position: Position) -> E {
@@ -106,7 +101,7 @@ struct CheckerBoard: Board {
 	}
 	
 	enum CodingKeys: String, CodingKey {
-		case rows, columns, pieces
+		case pieces
 		// moves
 	}
 	
@@ -134,9 +129,6 @@ struct CheckerBoard: Board {
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
 	
-//	var whitePiece: CheckerPieces { E.white }
-//	var blackPiece: CheckerPieces { E.black }
-	
 	var gameIsOver: Bool {
 		false
 	}
@@ -147,9 +139,9 @@ struct CheckerBoard: Board {
 	var rows: Int    { board.rows }
 	var columns: Int { board.columns }
 	
-	init(rows: Int = 8, columns: Int = 8) {
+	init() {
 		let player1 = Player(name: "Dummy1", colour: .white)
-		self.board = CheckerBoard(rows: rows, columns: columns)
+		self.board = CheckerBoard()
 		self.player1 = player1
 		self.player2 = Player(name: "Dummy2", colour: .white)
 		self.activePlayer = player1
@@ -161,7 +153,7 @@ struct CheckerBoard: Board {
 	}
 	
 	func newGame() {
-		self.board = CheckerBoard(rows: rows, columns: columns)
+		self.board = CheckerBoard()
 		setupInitialPieces()
 	}
 	
@@ -314,7 +306,7 @@ struct CheckerBoard: Board {
                 return
             }
         }
-		self.board = CheckerBoard(rows: rows, columns: columns)
+		self.board = CheckerBoard()
     }
     
 	func setPiece(_ selected: Position) -> Bool {
