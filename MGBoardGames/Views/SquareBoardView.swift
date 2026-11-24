@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 	let board: any Board
+	var selection: Position? = nil
 	var lightColor: Color = Color(.lightColour)
 	var darkColor: Color = Color(.darkColour)
 	var boardColor: Color = Color.backColour
@@ -36,10 +37,7 @@ struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 									.aspectRatio(1, contentMode: .fit)
 							}
 							.contentShape(Rectangle())
-							.onTapGesture {
-								print("Tap 2")
-								doTap(pos)
-							}
+							.onTapGesture { doTap(pos) }
 					}
 				}
 			}
@@ -53,7 +51,7 @@ struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 				SquaresView(board: board, lightColor: lightColor, darkColor: darkColor,
 							boardColor: boardColor, lineColor: lineColor,
 							lineWidth: lineWidth, useCutOut: useCutOut, doTap: doTap,
-							padding: padding)
+							padding: padding, selection: selection)
 			}
 		}
 		.overlay {
@@ -64,11 +62,10 @@ struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 							padding: padding)
 			}
 			RoundedRectangle(cornerRadius: radius)
-				.strokeBorder(useCutOut ? lightColor : Color.red, lineWidth: radius)
-				.shadow(color: .gray, radius: !useCutOut ? radius : 0, x: 0, y: 0)
+				.strokeBorder(useCutOut ? lightColor : darkColor, lineWidth: radius)
 		}
 		.clipShape(RoundedRectangle(cornerRadius: radius))
-		.shadow(color: .gray, radius: useCutOut ? radius : 0, x: 0, y: 10)
+		.shadow(color: .black, radius: radius, x: useCutOut ? 0 : 10, y: 10)
 	}
 }
 
@@ -82,6 +79,7 @@ struct SquaresView: View {
 	var useCutOut: Bool
 	let doTap: (Position) -> ()
 	let padding: CGFloat
+	var selection: Position? = nil
 	
 	var body: some View {
 		HStack(spacing: 0) {
@@ -89,9 +87,13 @@ struct SquaresView: View {
 				VStack(spacing: 0) {
 					ForEach(0..<board.rows, id: \.self) { row in
 						let isLight = (row + column).isMultiple(of: 2)
+						let selected = Position(row: row, col: column) == selection
 						Rectangle()
 							.fill(isLight ? lightColor : darkColor)
 							.stroke(lineColor, lineWidth: lineWidth)
+							.overlay {
+								Rectangle().fill(.yellow.opacity(selected ? 0.6 : 0))
+							}
 							.reverseMask {
 								Circle()
 									.scaleEffect(0.9)
@@ -101,7 +103,6 @@ struct SquaresView: View {
 				}
 				.allowsHitTesting(useCutOut)
 				.onTapGesture {
-					print("Tap 3")
 					if useCutOut {
 						doTap(Position(row: 0, col: column))
 					}

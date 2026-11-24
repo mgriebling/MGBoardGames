@@ -21,7 +21,7 @@ enum ChessPieces: GamePieceEnum {
 			 let .bishop(color),
 			 let .knight(color),
 			 let .rook(color):
-				return color
+			return color
 		case let .pawn(color, _):
 			return color
 		default:
@@ -183,7 +183,7 @@ struct ChessBoard: Board {
 	}
 	
 	private func index(from pos: Position) -> Int {
-		pos.col + rows * pos.row
+		pos.col + columns * pos.row
 	}
 	
 	subscript(position: Position) -> E {
@@ -222,9 +222,7 @@ struct ChessBoard: Board {
 	var player2: Player {
 		didSet { if player2.isStarting { activePlayer = player2 } }
 	}
-	
-	let errorPiece = ChessPieces.invalid
-	
+
 	var player1Score: Int { score(for: player1) }
 	var player2Score: Int { score(for: player1) }
 	
@@ -271,14 +269,11 @@ struct ChessBoard: Board {
 	}
 	
 	func switchTurns() {
-		let nextPlayerTemp: Player
-		if activePlayer.colour == player1.colour {
-			nextPlayerTemp = player2
+		if activePlayer == player1 {
+			activePlayer = player2
 		} else {
-			nextPlayerTemp = player1
+			activePlayer = player1
 		}
-		
-		if canPlayerMakeMove(nextPlayerTemp) { activePlayer = nextPlayerTemp }
 	}
 	
 	/// Simple computer algorithm to decide on the next move.  Check one move ahead and see
@@ -323,8 +318,8 @@ struct ChessBoard: Board {
 		
 		// check moves in each direction
 		let piece = self[selectedPiece]
-		var toLocation = selectedPiece
 		for move in piece.moves {
+			var toLocation = selectedPiece
 			move(&toLocation)
 			if selected == toLocation { return true	}
 		}
@@ -420,12 +415,14 @@ struct ChessBoard: Board {
 		if isValidMove(to: selected, for: activePlayer) {
 			guard let selectedPiece else { return false }
 			var activePiece = self[selectedPiece]
-			if case let .pawn(color, first) = activePiece, first {
-				activePiece = .pawn(color, false)  // first move is used
-			}
+//			if case let .pawn(color, first) = activePiece, first {
+//				activePiece = .pawn(color, false)  // first move is used
+//			}
 			self[selectedPiece] = .empty
 			self.selectedPiece = nil
-			board.move(to: selected, for: activePiece)
+			print("Moving \(activePiece) to \(selected)")
+			self[selected] = activePiece
+			print("Board at \(selected) = \(self[selected])")
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")

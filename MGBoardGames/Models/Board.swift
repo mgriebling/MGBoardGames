@@ -23,8 +23,8 @@ struct Position: Codable, Hashable, Equatable {
 	}
 }
 
-protocol GamePieceEnum : Codable, Equatable {
-	associatedtype Enum: Codable, Equatable
+protocol GamePieceEnum : Codable, Equatable, Hashable {
+	associatedtype Enum: Codable, Equatable, Hashable
 	static var empty: Enum { get }
 	static var error: Enum { get }
 	static var start: PlayerColor { get }

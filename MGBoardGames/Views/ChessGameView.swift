@@ -11,12 +11,12 @@ struct ChessGameView: View {
 	let game: ChessGame
 	let showMoves: Bool
 	
-	@State private var fontSize = CGFloat(50)
+	@State private var move = false
 	
 	var body: some View {
 		VStack {
 			Spacer(minLength: 0)
-			SquareBoardView(board: game.board, doTap: game.handleTap) { piece, position, _ in
+			SquareBoardView(board: game.board, selection: game.selectedPiece, doTap: game.handleTap) { piece, position, _ in
 				pieceView(piece: piece, position: position)
 			}
 			.blur(radius: game.gameIsOver ? 3 : 0)
@@ -26,7 +26,6 @@ struct ChessGameView: View {
 	
 	@ViewBuilder
 	func pieceView(piece: ChessPieces, position: Position) -> some View {
-		let selected = position == game.selectedPiece
 		Group {
 			if piece == ChessPieces.empty {
 				if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
@@ -41,20 +40,16 @@ struct ChessGameView: View {
 			} else {
 				Image(piece.image)
 					.resizable()
+					.offset(x: 0, y: move ? -2 : 0)
 					.aspectRatio(contentMode: .fit)
 			}
 		}
 		.scaleEffect(0.9)
 		.shadow(color: .black.opacity(0.5), radius: 2, x:2, y:2)
-		.background {
-			RoundedRectangle(cornerRadius: 10)
-				.inset(by: -2)
-				.fill(Color(.systemBlue).opacity(selected ? 1 : 0))
-		}
 	}
 }
 
 #Preview {
-	let game = ChessGame()
+	@Previewable @State var game = ChessGame()
 	ChessGameView(game: game, showMoves: false)
 }

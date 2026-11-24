@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TicTacToePieces: GamePieceEnum, Equatable  {
+enum TicTacToePieces: GamePieceEnum {
 	case blank, invalid, piece(PlayerColor)
 	
 	var description: String {
