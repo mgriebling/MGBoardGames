@@ -11,6 +11,11 @@ struct Position: Codable, Hashable, Equatable {
 	var row: Int
 	var col: Int
 	
+	func name(maxRows: Int) -> String {
+		let aCode = Int(Character("a").asciiValue!)
+		return String(UnicodeScalar(aCode+col)!) + String(maxRows-row)
+	}
+	
 	/// convenience method
 	func inc(_ row: Int = 0, col: Int = 0) -> Position {
 		Position(row: self.row + row, col: self.col + col)

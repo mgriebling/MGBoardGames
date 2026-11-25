@@ -20,7 +20,7 @@ struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 	var viewForItem: (Item, Position, Bool) -> ItemView
 
 	var body: some View {
-		let radius = 10.0
+		let radius = 10.0 + 4
 		let padding = radius
 		HStack(spacing: 0) {
 			ForEach(0..<board.columns, id: \.self) { column in
@@ -48,51 +48,77 @@ struct SquareBoardView<Item: GamePieceEnum, ItemView: View>: View {
 			if useCutOut {
 				ShiftingGradientBackground()
 			} else {
-				SquaresView(board: board, lightColor: lightColor, darkColor: darkColor,
-							boardColor: boardColor, lineColor: lineColor,
-							lineWidth: lineWidth, useCutOut: useCutOut, doTap: doTap,
-							padding: padding, selection: selection)
+				squaresView(padding: padding)
 			}
 		}
 		.overlay {
 			if useCutOut {
-				SquaresView(board: board, lightColor: lightColor, darkColor: darkColor,
-							boardColor: boardColor, lineColor: lineColor,
-							lineWidth: lineWidth, useCutOut: useCutOut, doTap: doTap,
-							padding: padding)
+				squaresView(padding: padding)
 			}
 			RoundedRectangle(cornerRadius: radius)
 				.strokeBorder(useCutOut ? lightColor : darkColor, lineWidth: radius)
+			
+				// Add square designators to the left and bottom of the board
+				.overlay {
+					// Number the board edges
+					ZStack {
+						// Creates the vertical row numbers
+						HStack {
+							VStack {
+								Spacer()
+								ForEach((1...board.rows).reversed(), id: \.self) { row in
+									Text(row, format: .number)
+										.foregroundStyle(lightColor)
+										.padding(.leading, 1)
+									Spacer()
+								}
+							}
+							Spacer()
+						}
+						
+						// Creates the horizontal column letters
+						VStack {
+							let aCode = Int(Character("A").asciiValue!)
+							Spacer()
+							HStack(spacing: radius/2) {
+								Spacer()
+								ForEach(0..<board.columns, id: \.self) { col in
+									Text(String(UnicodeScalar(aCode+col)!))
+										.foregroundStyle(lightColor)
+										.padding(.bottom, -3)
+									Spacer()
+								}
+							}
+						}
+					}
+				}
 		}
 		.clipShape(RoundedRectangle(cornerRadius: radius))
-		.shadow(color: .black, radius: radius, x: useCutOut ? 0 : 10, y: 10)
+		.shadow(color: .black, radius: radius, x: 0, y: useCutOut ? 10 : 0)
 	}
-}
-
-struct SquaresView: View {
-	let board: any Board
-	var lightColor: Color
-	var darkColor: Color
-	var boardColor: Color
-	var lineColor: Color
-	var lineWidth: CGFloat
-	var useCutOut: Bool
-	let doTap: (Position) -> ()
-	let padding: CGFloat
-	var selection: Position? = nil
 	
-	var body: some View {
+	func squaresView(padding: CGFloat) -> some View {
 		HStack(spacing: 0) {
 			ForEach(0..<board.columns, id: \.self) { column in
 				VStack(spacing: 0) {
 					ForEach(0..<board.rows, id: \.self) { row in
 						let isLight = (row + column).isMultiple(of: 2)
+						let highlight = isLight ? darkColor : lightColor
 						let selected = Position(row: row, col: column) == selection
 						Rectangle()
 							.fill(isLight ? lightColor : darkColor)
 							.stroke(lineColor, lineWidth: lineWidth)
 							.overlay {
-								Rectangle().fill(.yellow.opacity(selected ? 0.6 : 0))
+								// highlight the square when piece is active
+								Rectangle()
+									.fill(
+										RadialGradient(
+											colors: [highlight, .clear],
+											center: .center,
+											startRadius: 0,
+											endRadius: selected ? 50 : 0
+										)
+									)
 							}
 							.reverseMask {
 								Circle()
@@ -129,22 +155,6 @@ struct ShiftingGradientBackground: View {
 			withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: true)) {
 				animateGradient.toggle()
 			}
-		}
-	}
-}
-
-extension View {
-	@ViewBuilder
-	func reverseMask<Mask: View>(
-		alignment: Alignment = .center,
-		@ViewBuilder _ mask: () -> Mask
-	) -> some View {
-		self.mask {
-			Rectangle()
-				.overlay(alignment: alignment) {
-					mask()
-						.blendMode(.destinationOut)
-				}
 		}
 	}
 }

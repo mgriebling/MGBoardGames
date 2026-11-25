@@ -12,26 +12,54 @@ enum ChessPieces: GamePieceEnum {
 	
 	case blank, invalid
 	case king(PlayerColor), queen(PlayerColor), bishop(PlayerColor)
-	case knight(PlayerColor), rook(PlayerColor), pawn(PlayerColor, Bool)
+	case knight(PlayerColor), rook(PlayerColor), pawn(PlayerColor)
 	
 	var color: PlayerColor? {
 		switch self {
-		case let .queen(color),
-			 let .king(color),
-			 let .bishop(color),
-			 let .knight(color),
-			 let .rook(color):
-			return color
-		case let .pawn(color, _):
-			return color
-		default:
-			return nil
+			case let .queen(color),
+				 let .king(color),
+				 let .bishop(color),
+				 let .knight(color),
+				 let .rook(color),
+				 let .pawn(color): color
+			default: nil
+		}
+	}
+	
+	var name: String {
+		switch self {
+			case .queen: 	"Q"
+			case .king:  	"K"
+			case .bishop: 	"B"
+			case .knight: 	"N"
+			case .rook: 	"R"
+			case .pawn: 	""
+			default: 		""
+		}
+	}
+	
+	var maxMoves: Int {
+		switch self {
+			case .queen, .bishop, .rook: Self.boardSize
+			default: 1
 		}
 	}
 
 	var isWhite: Bool { color == .white }
 	var isBlack: Bool { color == .black }
 	var isEmpty: Bool { self == .blank }
+	
+	var points: Int {
+		switch self {
+			case .queen: 	9
+			case .king:  1000
+			case .bishop: 	3
+			case .knight: 	3
+			case .rook: 	5
+			case .pawn: 	1
+			default: 		0
+		}
+	}
 	
 	var image: ImageResource {
 		switch self {
@@ -52,33 +80,25 @@ enum ChessPieces: GamePieceEnum {
 		}
 	}
 	
-	private func generateMoves(for moveGenerator: (Int) -> ([NavigationFunction]), distance: Int) -> [NavigationFunction] {
-		var moves = [NavigationFunction]()
-		for d in 1...distance {
-			moves.append(contentsOf: moveGenerator(d))
-		}
-		return moves
+	private func allMoves() -> [NavigationFunction] {
+		orthogonalMoves() + diagonalMoves()
 	}
 	
-	private func allMoves(d: Int) -> [NavigationFunction] {
-		orthogonalMoves(d: d) + diagonalMoves(d: d)
-	}
-	
-	private func orthogonalMoves(d: Int) -> [NavigationFunction] {
+	private func orthogonalMoves() -> [NavigationFunction] {
 		[
-			{ pos in pos.col += d },               // move right
-			{ pos in pos.col -= d },               // move left
-			{ pos in pos.row -= d },               // move up
-			{ pos in pos.row += d },               // move down
+			{ pos in pos.col += 1 }, // move right
+			{ pos in pos.col -= 1 }, // move left
+			{ pos in pos.row -= 1 }, // move up
+			{ pos in pos.row += 1 }, // move down
 		]
 	}
 	
-	private func diagonalMoves(d: Int) -> [NavigationFunction] {
+	private func diagonalMoves() -> [NavigationFunction] {
 		[
-			{ pos in pos.row += d; pos.col += d }, // move right up
-			{ pos in pos.row -= d; pos.col += d }, // move right down
-			{ pos in pos.row += d; pos.col -= d }, // move left up
-			{ pos in pos.row -= d; pos.col -= d }  // move left down
+			{ pos in pos.row += 1; pos.col += 1 }, // move right up
+			{ pos in pos.row -= 1; pos.col += 1 }, // move right down
+			{ pos in pos.row += 1; pos.col -= 1 }, // move left up
+			{ pos in pos.row -= 1; pos.col -= 1 }  // move left down
 		]
 	}
 	
@@ -95,36 +115,24 @@ enum ChessPieces: GamePieceEnum {
 		]
 	}
 	
-	private func pawnMoves(_ color: PlayerColor, _ first: Bool) -> [NavigationFunction] {
+	private func pawnMoves(_ color: PlayerColor) -> [NavigationFunction] {
 		// assumes white is on the bottom of the board
 		let d = color == .white ? 1 : -1
-		var moves: [NavigationFunction] = [
-			{ pos in pos.row -= d; pos.col += 1 }, // move vertically/right
-			{ pos in pos.row -= d; pos.col -= 1 }, // move vertically/left
+		return [
 			{ pos in pos.row -= d },               // move vertically 1 row
-			{ pos in pos.row -= 2 * d },           // move vertically 2 rows
+			{ pos in pos.row -= d; pos.col += 1 }, // move vertically/right
+			{ pos in pos.row -= d; pos.col -= 1 }  // move vertically/left
 		]
-		if !first { moves.removeLast() }		   // remove 2 row move
-		return moves
 	}
 	
 	var moves: [NavigationFunction] {
-		let maxMoves = Self.boardSize
 		switch self {
-			case .king:
-				return allMoves(d: 1)
-			case .queen:
-				return generateMoves(for: allMoves, distance: maxMoves)
-			case .bishop:
-				return generateMoves(for: diagonalMoves, distance: maxMoves)
-			case .rook:
-				return generateMoves(for: orthogonalMoves, distance: maxMoves)
-			case .knight:
-				return knightMoves()
-			case .pawn(let color, let first):
-				return pawnMoves(color, first)
-			default:
-				return [NavigationFunction]()
+			case .king, .queen: 	allMoves()
+			case .bishop:			diagonalMoves()
+			case .rook:				orthogonalMoves()
+			case .knight:			knightMoves()
+			case .pawn(let color): 	pawnMoves(color)
+			default:		 		[]
 		}
 	}
 	
@@ -133,20 +141,20 @@ enum ChessPieces: GamePieceEnum {
 	static var start: PlayerColor { .black }
 	
 	// piece name aliases
-	static var wKing: Self { .king(.white) }
-	static var wQueen: Self { .queen(.white) }
+	static var wKing: Self 	 { .king(.white) }
+	static var wQueen: Self  { .queen(.white) }
 	static var wBishop: Self { .bishop(.white) }
 	static var wKnight: Self { .knight(.white) }
-	static var wRook: Self { .rook(.white) }
+	static var wRook: Self 	 { .rook(.white) }
 	static var wCastle: Self { .rook(.white) }
-	static var wPawn: Self { .pawn(.white, true) }
-	static var bKing: Self { .king(.black) }
-	static var bQueen: Self { .queen(.black) }
+	static var wPawn: Self 	 { .pawn(.white) }
+	static var bKing: Self 	 { .king(.black) }
+	static var bQueen: Self  { .queen(.black) }
 	static var bBishop: Self { .bishop(.black) }
 	static var bKnight: Self { .knight(.black) }
-	static var bRook: Self { .rook(.black) }
+	static var bRook: Self 	 { .rook(.black) }
 	static var bCastle: Self { .rook(.black) }
-	static var bPawn: Self { .pawn(.black, true) }
+	static var bPawn: Self 	 { .pawn(.black) }
 }
 
 struct ChessBoard: Board {
@@ -158,6 +166,10 @@ struct ChessBoard: Board {
 	
 	/// Game board with rows x columns positions
 	private var pieces = [E]()
+	
+	/// Game scores
+	var blackScore = 0
+	var whiteScore = 0
 	
 	init() {
 		clearAll()
@@ -175,7 +187,7 @@ struct ChessBoard: Board {
 	}
 	
 	func score(_ playerColor: PlayerColor) -> Int {
-		0 // pieces.count { $0 == playerColor }
+		playerColor == .white ? whiteScore : blackScore
 	}
 	
 	mutating func set(positions: [Position], to piece: E) {
@@ -318,10 +330,43 @@ struct ChessBoard: Board {
 		
 		// check moves in each direction
 		let piece = self[selectedPiece]
+		print("Piece = \(piece) at \(selectedPiece)")
+		var maxMoves = piece.maxMoves
+		
+		// pawns can move two positions one their first move
+		if piece == .pawn(.white), selected.row == 6 {
+			maxMoves += 1
+		}
+		if piece == .pawn(.black), selected.row == 1 {
+			maxMoves += 1
+		}
+	loop:
 		for move in piece.moves {
-			var toLocation = selectedPiece
-			move(&toLocation)
-			if selected == toLocation { return true	}
+			print("Try move...")
+			for _ in 1...maxMoves {
+				var toLocation = selectedPiece
+				move(&toLocation)
+				print("Try move to \(toLocation)")
+				
+				// check if move is off the board
+				guard toLocation.col >= 0, toLocation.row >= 0,
+					  toLocation.col < columns, toLocation.row < rows
+				else {
+					print("Out of range, next move")
+					continue loop
+				} // next move
+				
+				let toPiece = self[toLocation]
+				if selected == toLocation {
+					// either occupy the location or take the opponent piece
+					return toPiece.isEmpty || toPiece.color != piece.color
+				} else if !toPiece.isEmpty {
+					// blocking piece no further move possible
+					print("Piece \(toPiece) is blocking at \(toLocation)")
+					continue loop
+				}
+			}
+			print("\n")
 		}
 		return false
 	}
@@ -330,16 +375,16 @@ struct ChessBoard: Board {
 		self[Position(row: 0, col: 0)] = .bRook
 		self[Position(row: 0, col: 1)] = .bKnight
 		self[Position(row: 0, col: 2)] = .bBishop
-		self[Position(row: 0, col: 3)] = .bKing
-		self[Position(row: 0, col: 4)] = .bQueen
+		self[Position(row: 0, col: 3)] = .bQueen
+		self[Position(row: 0, col: 4)] = .bKing
 		self[Position(row: 0, col: 5)] = .bBishop
 		self[Position(row: 0, col: 6)] = .bKnight
 		self[Position(row: 0, col: 7)] = .bRook
 		self[Position(row: 7, col: 0)] = .wRook
 		self[Position(row: 7, col: 1)] = .wKnight
 		self[Position(row: 7, col: 2)] = .wBishop
-		self[Position(row: 7, col: 3)] = .wKing
-		self[Position(row: 7, col: 4)] = .wQueen
+		self[Position(row: 7, col: 3)] = .wQueen
+		self[Position(row: 7, col: 4)] = .wKing
 		self[Position(row: 7, col: 5)] = .wBishop
 		self[Position(row: 7, col: 6)] = .wKnight
 		self[Position(row: 7, col: 7)] = .wRook
@@ -360,7 +405,9 @@ struct ChessBoard: Board {
 	
 	func handleTap(at selected: Position) {
 		guard !gameIsOver else { return }
-		if selectedPiece == nil, board[selected] != .empty {
+		let opponent: PlayerColor = activeColor == .white ? .black : .white
+		let piece = board[selected]
+		if selectedPiece == nil, !piece.isEmpty {
 			// mark selectedPiece position on the board
 			self.selectedPiece = selected
 			return
@@ -368,7 +415,7 @@ struct ChessBoard: Board {
 			// undo the selection
 			self.selectedPiece = nil
 			return
-		} else if let _ = selectedPiece, board[selected] != .empty {
+		} else if let _ = selectedPiece, !piece.isEmpty, piece.color != opponent {
 			// pick another piece
 			self.selectedPiece = selected
 			return
@@ -414,15 +461,10 @@ struct ChessBoard: Board {
 	func setPiece(_ selected: Position) -> Bool {
 		if isValidMove(to: selected, for: activePlayer) {
 			guard let selectedPiece else { return false }
-			var activePiece = self[selectedPiece]
-//			if case let .pawn(color, first) = activePiece, first {
-//				activePiece = .pawn(color, false)  // first move is used
-//			}
+			let activePiece = self[selectedPiece]
 			self[selectedPiece] = .empty
 			self.selectedPiece = nil
-			print("Moving \(activePiece) to \(selected)")
 			self[selected] = activePiece
-			print("Board at \(selected) = \(self[selected])")
 			print("Player = \(activePlayer.name)")
 			switchTurns()
 			print("New Player = \(activePlayer.name)")
