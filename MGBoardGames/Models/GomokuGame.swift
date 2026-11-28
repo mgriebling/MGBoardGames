@@ -164,10 +164,10 @@ struct GomokuBoard: Board {
 	}
 	
 	var gameIsOver: Bool {
-		let incRight: NavigationFunction = { pos in pos.col += 1 }
-		let incDown: NavigationFunction = { pos in pos.row += 1 }
-		let incDR: NavigationFunction = { pos in pos.row += 1; pos.col += 1 }
-		let incDL: NavigationFunction = { pos in pos.row += 1; pos.col -= 1  }
+		let incRight = NavigationFunction(col: 1)
+		let incDown  = NavigationFunction(row: 1)
+		let incDR    = NavigationFunction(row: 1, col: 1)
+		let incDL    = NavigationFunction(row: 1, col: -1)
 		let win3 =
 			threeInARow(Position(row: 0, col: 0), incRight) || // check rowa
 			threeInARow(Position(row: 1, col: 0), incRight) ||
@@ -196,7 +196,7 @@ struct GomokuBoard: Board {
 		for _ in 0..<3 {
 			let piece = self[p]
 			if piece.isEmpty || startPiece != piece { return false }
-			move(&p) // next position
+			move.move(&p) // next position
 		}
 		return true
 	}

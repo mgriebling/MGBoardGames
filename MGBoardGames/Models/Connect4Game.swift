@@ -170,17 +170,17 @@ struct Connect4Board: Board {
 		/// now we need to check all positions in the *move* direction
 		var pos = pos  // mutatble
 		for _ in 1..<itemsInARow {
-			move(&pos)
+			move.move(&pos)
 			if self[pos] != initialChip { return false }
 		}
 		return true
 	}
 	
 	private let moves: [NavigationFunction] = [
-		{pos in pos.col += 1 }, 			  // check to the right
-		{pos in pos.row += 1 },			 	  // check below
-		{pos in pos.row += 1; pos.col += 1 }, // diagonal down, right
-		{pos in pos.row -= 1; pos.col += 1 }  // diagonal up, right
+		NavigationFunction(col: 1),			// check to the right
+		NavigationFunction(row: 1),			// check below
+		NavigationFunction(row: 1, col: 1), // diagonal down, right
+		NavigationFunction(row: 1, col: -1) // diagonal up, right
 	]
 	
 	func isWin(for player: Player) -> Bool {

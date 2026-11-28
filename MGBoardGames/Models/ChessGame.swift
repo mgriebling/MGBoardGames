@@ -8,7 +8,8 @@
 import SwiftUI
 
 enum ChessPieces: GamePieceEnum {
-	static let boardSize = 8   // this should probably not be hardcoded here
+	// FIXME: This should probably not be hardcoded here
+	static let boardSize = 8
 	
 	case blank, invalid
 	case king(PlayerColor), queen(PlayerColor), bishop(PlayerColor)
@@ -86,42 +87,40 @@ enum ChessPieces: GamePieceEnum {
 	
 	private func orthogonalMoves() -> [NavigationFunction] {
 		[
-			{ pos in pos.col += 1 }, // move right
-			{ pos in pos.col -= 1 }, // move left
-			{ pos in pos.row -= 1 }, // move up
-			{ pos in pos.row += 1 }, // move down
+			NavigationFunction(col:  1), // move right
+			NavigationFunction(col: -1), // move left
+			NavigationFunction(row: -1), // move up
+			NavigationFunction(row:  1)  // move down
 		]
 	}
 	
 	private func diagonalMoves() -> [NavigationFunction] {
 		[
-			{ pos in pos.row += 1; pos.col += 1 }, // move right up
-			{ pos in pos.row -= 1; pos.col += 1 }, // move right down
-			{ pos in pos.row += 1; pos.col -= 1 }, // move left up
-			{ pos in pos.row -= 1; pos.col -= 1 }  // move left down
+			NavigationFunction(row:  1, col:  1), // move right down
+			NavigationFunction(row: -1, col:  1), // move right up
+			NavigationFunction(row:  1, col: -1), // move left down
+			NavigationFunction(row: -1, col: -1), // move left up
 		]
 	}
 	
 	private func knightMoves() -> [NavigationFunction] {
 		[
-			{ pos in pos.row += 2; pos.col += 1 }, // up 2, right 1
-			{ pos in pos.row += 2; pos.col -= 1 }, // up 2, left 1
-			{ pos in pos.row -= 2; pos.col += 1 }, // down 2, right 1
-			{ pos in pos.row -= 2; pos.col -= 1 }, // down 2, left 1
-			{ pos in pos.row -= 1; pos.col += 2 }, // right 2, down 1
-			{ pos in pos.row += 1; pos.col += 2 }, // right 2, up 1
-			{ pos in pos.row -= 1; pos.col -= 2 }, // left 2, down 1
-			{ pos in pos.row += 1; pos.col -= 2 }, // left 2, up 1
+			NavigationFunction(row:  2, col:  1), // down 2, right 1
+			NavigationFunction(row:  2, col: -1), // down 2, left 1
+			NavigationFunction(row: -2, col:  1), // up 2, right 1
+			NavigationFunction(row: -2, col: -1), // up 2, left 1
+			NavigationFunction(row:  1, col:  2), // right 2, down 1
+			NavigationFunction(row: -1, col:  2), // right 2, up 1
+			NavigationFunction(row:  1, col: -2), // left 2, down 1
+			NavigationFunction(row: -1, col: -2), // left 2, up 1
 		]
 	}
 	
 	private func pawnMoves(_ color: PlayerColor) -> [NavigationFunction] {
 		// assumes white is on the bottom of the board
-		let d = color == .white ? 1 : -1
+		let d = color == .white ? -1 : 1
 		return [
-			{ pos in pos.row -= d },               // move vertically 1 row
-			{ pos in pos.row -= d; pos.col += 1 }, // move vertically/right
-			{ pos in pos.row -= d; pos.col -= 1 }  // move vertically/left
+			NavigationFunction(row: d),  // move vertically 1 row
 		]
 	}
 	
@@ -160,8 +159,8 @@ enum ChessPieces: GamePieceEnum {
 struct ChessBoard: Board {
 	typealias E = ChessPieces
 	
-	let rows = 8
-	let columns = 8
+	let rows = E.boardSize
+	let columns = E.boardSize
 	let itemsInARow = 0  // N/A
 	
 	/// Game board with rows x columns positions
@@ -333,19 +332,47 @@ struct ChessBoard: Board {
 		print("Piece = \(piece) at \(selectedPiece)")
 		var maxMoves = piece.maxMoves
 		
-		// pawns can move two positions one their first move
-		if piece == .pawn(.white), selected.row == 6 {
-			maxMoves += 1
+		// identify intended move direction
+		var moves = piece.moves
+		let delta = (selected - selectedPiece)
+		let direction = NavigationFunction(row: delta.row, col: delta.col).direction
+		print("Trying to move \(direction)")
+		
+		// pawns can move two positions on their first move
+		if piece == .pawn(.white) {
+			if (direction == .leftUp || direction == .rightUp), !self[selected].isEmpty {
+				// add move to capture piece
+				if direction == .leftUp {
+					moves.append(NavigationFunction(row: -1, col: -1))
+				} else if direction == .rightUp {
+					moves.append(NavigationFunction(row: -1, col: 1))
+				}
+			} else if selectedPiece.row == 6 { maxMoves += 1 }
+		} else if piece == .pawn(.black) {
+			if (direction == .leftDown || direction == .rightDown), !self[selected].isEmpty {
+				// add move to capture piece
+				if direction == .leftDown {
+					moves.append(NavigationFunction(row: 1, col: -1))
+				} else if direction == .rightDown {
+					moves.append(NavigationFunction(row: 1, col: 1))
+				}
+			} else if selectedPiece.row == 1 { maxMoves += 1 }
 		}
-		if piece == .pawn(.black), selected.row == 1 {
-			maxMoves += 1
+		print("Max moves = \(maxMoves)")
+		
+		// remove any non-matching directions
+		let filteredMoves = moves.filter { move in
+			print("Checking \(move.direction)")
+			return move.direction == direction
 		}
+		print("Filtered moves remaining \(filteredMoves.count)")
+		
 	loop:
-		for move in piece.moves {
+		for move in filteredMoves {
 			print("Try move...")
+			var toLocation = selectedPiece
 			for _ in 1...maxMoves {
-				var toLocation = selectedPiece
-				move(&toLocation)
+				move.move(&toLocation)
 				print("Try move to \(toLocation)")
 				
 				// check if move is off the board
@@ -405,7 +432,6 @@ struct ChessBoard: Board {
 	
 	func handleTap(at selected: Position) {
 		guard !gameIsOver else { return }
-		let opponent: PlayerColor = activeColor == .white ? .black : .white
 		let piece = board[selected]
 		if selectedPiece == nil, !piece.isEmpty {
 			// mark selectedPiece position on the board
@@ -415,7 +441,7 @@ struct ChessBoard: Board {
 			// undo the selection
 			self.selectedPiece = nil
 			return
-		} else if let _ = selectedPiece, !piece.isEmpty, piece.color != opponent {
+		} else if let sPiece = selectedPiece, !piece.isEmpty, piece.color == self[sPiece].color {
 			// pick another piece
 			self.selectedPiece = selected
 			return

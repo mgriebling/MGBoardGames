@@ -27,7 +27,7 @@ struct ChessGameView: View {
 	@ViewBuilder
 	func pieceView(piece: ChessPieces, position: Position) -> some View {
 		Group {
-			if piece == ChessPieces.empty {
+			if piece.isEmpty {
 				if showMoves && game.isValidMove(to: position, for: game.activePlayer) {
 					Image(systemName: "checkmark.circle")
 						.foregroundColor(game.activePlayer.colour == .white ? Color.white : .black)

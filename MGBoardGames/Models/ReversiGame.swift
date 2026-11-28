@@ -61,14 +61,15 @@ struct ReversiBoard: Board {
 	
 	// Movement functions for reversi inspired by SHCReversi demo
 	let moves: [NavigationFunction] = [
-		{ pos in pos.col += 1 },             	// move right
-		{ pos in pos.col -= 1 },             	// move left
-		{ pos in pos.row -= 1 },                // move up
-		{ pos in pos.row += 1 },                // move down
-		{ pos in pos.row += 1; pos.col += 1 },  // move right up
-		{ pos in pos.row -= 1; pos.col += 1 },  // move right down
-		{ pos in pos.row += 1; pos.col -= 1 },  // move left up
-		{ pos in pos.row -= 1; pos.col -= 1 }   // move left down
+		NavigationFunction(col:  1), // move right
+		NavigationFunction(col: -1), // move left
+		NavigationFunction(row: -1), // move up
+		NavigationFunction(row:  1), // move down
+
+		NavigationFunction(row:  1, col:  1), // move right down
+		NavigationFunction(row: -1, col:  1), // move right up
+		NavigationFunction(row:  1, col: -1), // move left down
+		NavigationFunction(row: -1, col: -1)  // move left up
 	]
 	
 	// Placement of reversi pieces along with opponent flipping
@@ -90,7 +91,7 @@ struct ReversiBoard: Board {
 		var pos = position      // need mutability
 		repeat {
 			// advance to the next cell
-			move(&pos)
+			move.move(&pos)
 			currentState = self[pos]
 			self[pos] = state
 		} while pos.col >= 0 && pos.col < columns && pos.row >= 0 && pos.row < rows && currentState == opponentsState
@@ -100,7 +101,7 @@ struct ReversiBoard: Board {
 		var pos = selected
 
 		// advances row, column values to next cell
-		move(&pos)
+		move.move(&pos)
 
 		// check within the bounds of the board
 		var index = 1
@@ -119,7 +120,7 @@ struct ReversiBoard: Board {
 			index += 1
 			
 			// advance to the next cell
-			move(&pos)
+			move.move(&pos)
 		}
 		return false
 	}
